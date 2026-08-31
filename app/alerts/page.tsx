@@ -1,5 +1,5 @@
 export default function Alerts(){
-const channelUrl=process.env.NEXT_PUBLIC_TELEGRAM_CHANNEL_URL;
+const channelUrl="https://t.me/jobfrsher";
 return <main className="auth">
 <a className="backLink" href="/">← Board</a>
 <span>Boarding pass · Alerts</span>
@@ -11,7 +11,7 @@ return <main className="auth">
 <p style={{fontSize:13,color:"var(--ink-dim)",marginTop:14,lineHeight:1.6}}>Every new role that clears the fresher filter gets posted here as soon as the board updates.</p>
 </div>
 <div className="ticketStub">
-{channelUrl?<a className="ticketBtn" href={channelUrl} target="_blank" rel="noreferrer">Join channel</a>:<span className="ticketBtn ticketBtnDisabled">Coming soon</span>}
+<a className="ticketBtn" href={channelUrl} target="_blank" rel="noopener noreferrer">🔔 Join Telegram Alerts</a>
 </div>
 </div>
 </main>

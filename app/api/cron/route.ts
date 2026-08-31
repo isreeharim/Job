@@ -13,7 +13,9 @@ function errorResponse(stage:string,error:unknown,status=500){
 
 export async function GET(req:NextRequest){
   const secret=process.env.CRON_SECRET;
-  if(secret&&req.headers.get("authorization")!==`Bearer ${secret}`)
+  if(!secret)
+    return NextResponse.json({error:"CRON_SECRET is not configured"},{status:500});
+  if(req.headers.get("authorization")!==`Bearer ${secret}`)
     return NextResponse.json({error:"Unauthorized"},{status:401});
 
   if(!supabaseAdmin)
@@ -21,8 +23,17 @@ export async function GET(req:NextRequest){
 
   try{
     const jobs=await fetchRemoteJobs();
+
+    // Keep the board fresh: remove jobs older than 30 days by publication date.
+    const expiryDate=new Date(Date.now()-30*24*60*60*1000).toISOString();
+    const {error:cleanupError}=await supabaseAdmin
+      .from("jobs")
+      .delete()
+      .lt("published_at",expiryDate);
+    if(cleanupError)return errorResponse("cleaning expired jobs",cleanupError);
+
     if(!jobs.length)
-      return NextResponse.json({ok:true,found:0,saved:0,newJobs:0,notified:false,checkedAt:new Date().toISOString()});
+      return NextResponse.json({ok:true,found:0,saved:0,newJobs:0,notified:false,expiredBefore:expiryDate,checkedAt:new Date().toISOString()});
 
     const ids=jobs.map(j=>j.id);
     const {data:existing,error:existingError}=await supabaseAdmin.from("jobs").select("id").in("id",ids);
@@ -44,7 +55,7 @@ export async function GET(req:NextRequest){
     const jobsToNotify=sendAll?jobs:newJobs;
     const notified=jobsToNotify.length?await sendTelegramDigest(jobsToNotify):false;
     return NextResponse.json({
-      ok:true,found:jobs.length,saved:rows.length,newJobs:newJobs.length,notified,sendAll,
+      ok:true,found:jobs.length,saved:rows.length,newJobs:newJobs.length,notified,sendAll,expiredBefore:expiryDate,
       checkedAt:new Date().toISOString()
     });
   }catch(error){

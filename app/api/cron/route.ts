@@ -1,2 +1,29 @@
-import {NextRequest,NextResponse} from "next/server";import {fetchRemoteJobs} from "@/lib/job-sources";import {supabaseAdmin} from "@/lib/supabase";import {sendTelegramDigest} from "@/lib/notify";
-export async function GET(req:NextRequest){if(process.env.CRON_SECRET&&req.headers.get("authorization")!==`Bearer ${process.env.CRON_SECRET}`)return NextResponse.json({error:"Unauthorized"},{status:401});const jobs=await fetchRemoteJobs();let upserted=0;let newJobs=jobs;if(supabaseAdmin&&jobs.length){const ids=jobs.map(j=>j.id);const{data:existing}=await supabaseAdmin.from("jobs").select("id").in("id",ids);const existingIds=new Set((existing||[]).map(r=>r.id));newJobs=jobs.filter(j=>!existingIds.has(j.id));const rows=jobs.map(j=>({id:j.id,title:j.title,company:j.company,location:j.location,url:j.url,description:j.description,source:j.source,published_at:j.publishedAt||null}));const{error,count}=await supabaseAdmin.from("jobs").upsert(rows,{onConflict:"id",count:"exact"});if(error)console.error("Supabase upsert failed",error);else upserted=count??rows.length;}const notified=newJobs.length?await sendTelegramDigest(newJobs):false;return NextResponse.json({ok:true,found:jobs.length,upserted,newJobs:newJobs.length,notified,checkedAt:new Date().toISOString()})}
+import {NextRequest,NextResponse} from "next/server";
+import {fetchRemoteJobs} from "@/lib/job-sources";
+import {supabaseAdmin} from "@/lib/supabase";
+import {sendTelegramDigest} from "@/lib/notify";
+
+export async function GET(req:NextRequest){
+  if(process.env.CRON_SECRET&&req.headers.get("authorization")!==`Bearer ${process.env.CRON_SECRET}`)
+    return NextResponse.json({error:"Unauthorized"},{status:401});
+
+  if(!supabaseAdmin)
+    return NextResponse.json({error:"Supabase server credentials are not configured"},{status:500});
+
+  const jobs=await fetchRemoteJobs();
+  if(!jobs.length)return NextResponse.json({ok:true,found:0,newJobs:0,notified:false,checkedAt:new Date().toISOString()});
+
+  const ids=jobs.map(j=>j.id);
+  const {data:existing,error:existingError}=await supabaseAdmin.from("jobs").select("id").in("id",ids);
+  if(existingError)return NextResponse.json({error:"Unable to check existing jobs"},{status:500});
+
+  const existingIds=new Set((existing||[]).map(row=>row.id));
+  const newJobs=jobs.filter(job=>!existingIds.has(job.id));
+  const rows=jobs.map(j=>({id:j.id,title:j.title,company:j.company,location:j.location,url:j.url,description:j.description,source:j.source,published_at:j.publishedAt||null}));
+
+  const {error:upsertError}=await supabaseAdmin.from("jobs").upsert(rows,{onConflict:"id"});
+  if(upsertError)return NextResponse.json({error:"Unable to save jobs"},{status:500});
+
+  const notified=newJobs.length?await sendTelegramDigest(newJobs):false;
+  return NextResponse.json({ok:true,found:jobs.length,saved:rows.length,newJobs:newJobs.length,notified,checkedAt:new Date().toISOString()});
+}

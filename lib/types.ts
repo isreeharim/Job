@@ -1,0 +1,1 @@
+export type Job={id:string;title:string;company:string;location:string;url:string;description:string;source:string;publishedAt?:string};

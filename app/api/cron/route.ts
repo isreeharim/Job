@@ -1,0 +1,2 @@
+import {NextRequest,NextResponse} from "next/server";import {fetchRemoteJobs} from "@/lib/job-sources";
+export async function GET(req:NextRequest){if(process.env.CRON_SECRET&&req.headers.get("authorization")!==`Bearer ${process.env.CRON_SECRET}`)return NextResponse.json({error:"Unauthorized"},{status:401});const jobs=await fetchRemoteJobs();return NextResponse.json({ok:true,found:jobs.length,checkedAt:new Date().toISOString()})}

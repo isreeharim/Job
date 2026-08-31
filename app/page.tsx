@@ -55,7 +55,7 @@ return <main className="board">
 {jobs.slice(0,60).map(j=><a href={j.url} target="_blank" rel="noreferrer" className="row" key={j.id}>
 <span className="role">{j.title}<span className="roleLoc">{j.location||"Remote worldwide"}</span></span>
 <span className="company">{j.company}</span>
-<span className="gate">{j.source}</span>
+<span className="gate">{j.source}<small>{timeAgo(j.publishedAt)}</small></span>
 <span className="status">Open</span>
 </a>)}
 </>}

@@ -1,0 +1,32 @@
+name: Test Telegram Alert
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-telegram:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Send test Telegram alert
+        env:
+          CRON_URL: ${{ secrets.CRON_URL || 'https://job.sreeharim.site/api/test-telegram' }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "Missing CRON_SECRET GitHub Actions secret"
+            exit 1
+          fi
+
+          response=$(mktemp)
+          status=$(curl --silent --show-error             --connect-timeout 15             --max-time 30             -o "$response"             -w "%{http_code}"             -H "Authorization: Bearer $CRON_SECRET"             "$CRON_URL")
+
+          cat "$response"
+
+          if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+            echo "Telegram test failed with HTTP $status"
+            exit 1
+          fi

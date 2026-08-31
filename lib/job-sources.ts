@@ -3,6 +3,7 @@ const seniorTitle=/\b(senior|sr\.?|staff|principal|lead|manager|director|archite
 const nonFresherRole=/\b(account executive|sales executive|sales manager|business development manager|enterprise account|solutions architect)\b/i;
 const fresherKeyword=/\b(fresher|entry[ -]?level|junior|graduate|new grad|intern(ship)?|trainee|apprentice|associate|early career|university graduate|campus)\b/i;
 const zeroExperience=/\b(no experience|0\s*(?:-|to)?\s*1\s*(?:years?|yrs?)|0\+?\s*(?:years?|yrs?))\b/i;
+const experienceRange=/\b(\d{1,2})\s*(?:-|to)\s*(\d{1,2})\s*(?:years?|yrs?)\b/gi;
 const experienceYears=/\b(\d{1,2})\+?\s*(?:years?|yrs?)\b/gi;
 
 export function isFresherJob(job:Job){
@@ -13,8 +14,12 @@ export function isFresherJob(job:Job){
   if(seniorTitle.test(title)||nonFresherRole.test(title))return false;
 
   // Explicit entry-level signals are preferred, but reject contradictory 2+ year requirements.
-  const years=[...text.matchAll(experienceYears)].map(m=>parseInt(m[1],10));
-  if(years.some(year=>year>=2))return false;
+  // Allow entry-level ranges such as 0-2 years, but reject roles whose
+  // minimum required experience is already 2+ years.
+  const ranges=[...text.matchAll(experienceRange)].map(m=>[parseInt(m[1],10),parseInt(m[2],10)]);
+  const rangeSpans=ranges.map(([min,max])=>new RegExp(`\\b${min}\\s*(?:-|to)\\s*${max}\\s*(?:years?|yrs?)\\b`,"i"));
+  const standaloneYears=[...text.matchAll(experienceYears)].map(m=>parseInt(m[1],10));
+  if(standaloneYears.some(year=>year>=2)&&!ranges.some(([min,max])=>min<2&&max>=2))return false;
 
   if(fresherKeyword.test(text)||zeroExperience.test(text))return true;
 

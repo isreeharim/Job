@@ -21,9 +21,18 @@ jobs:
             exit 1
           fi
 
-          response=$(curl -sS --fail-with-body             -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage"             -d "chat_id=$TELEGRAM_CHAT_ID"             --data-urlencode "text=🔔 RemoteFlow Telegram test successful! Your fresher job alerts are connected. 🚀")
+          response=$(mktemp)
+          status=$(curl -sS             -o "$response"             -w "%{http_code}"             -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage"             -d "chat_id=$TELEGRAM_CHAT_ID"             --data-urlencode "text=🔔 RemoteFlow Telegram test successful! Your fresher job alerts are connected. 🚀")
 
-          echo "$response"
+          echo "Telegram API response:"
+          cat "$response"
+          echo
+          echo "HTTP status: $status"
+
+          if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+            echo "Telegram test failed"
+            exit 1
+          fi
 
       - name: Test Vercel Telegram endpoint
         env:
@@ -35,4 +44,14 @@ jobs:
             exit 1
           fi
 
-          curl -sS --fail-with-body             --connect-timeout 15             --max-time 30             -H "Authorization: Bearer $CRON_SECRET"             "$CRON_URL"
+          response=$(mktemp)
+          status=$(curl -sS             --connect-timeout 15             --max-time 30             -o "$response"             -w "%{http_code}"             -H "Authorization: Bearer $CRON_SECRET"             "$CRON_URL")
+
+          echo "Vercel API response:"
+          cat "$response"
+          echo
+          echo "HTTP status: $status"
+
+          if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+            exit 1
+          fi

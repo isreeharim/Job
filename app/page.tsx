@@ -21,15 +21,19 @@ const[loading,setLoading]=useState(true);
 const[q,setQ]=useState("");
 const[category,setCategory]=useState("all");
 const[days,setDays]=useState(0);
+const[currentPage,setCurrentPage]=useState(1);
+const[hasMore,setHasMore]=useState(false);
 useEffect(()=>{
 setLoading(true);
 const params=new URLSearchParams();
 if(q)params.set("q",q);
 if(category!=="all")params.set("category",category);
 if(days)params.set("days",String(days));
-const t=setTimeout(()=>{fetch("/api/jobs?"+params.toString()).then(r=>r.json()).then(d=>setJobs(d.jobs||[])).catch(()=>setJobs([])).finally(()=>setLoading(false))},300);
+params.set("page",String(currentPage));
+params.set("limit","20");
+const t=setTimeout(()=>{fetch("/api/jobs?"+params.toString()).then(r=>r.json()).then(d=>{setJobs(d.jobs||[]);setHasMore(Boolean(d.hasMore));}).catch(()=>{setJobs([]);setHasMore(false);}).finally(()=>setLoading(false))},300);
 return ()=>clearTimeout(t);
-},[q,category,days]);
+},[q,category,days,currentPage]);
 return <main className="board">
 <header className="boardHeader">
 <a className="brand" href="/"><span className="brandMark">✈</span>RemoteFlow</a>
@@ -46,18 +50,19 @@ return <main className="board">
 <span>{loading?"":`${jobs.length} roles open`}</span>
 </div>
 <div className="filters">
-<input className="search" placeholder="Search role or company…" value={q} onChange={e=>setQ(e.target.value)}/>
-<div className="typeFilters">{CATEGORIES.map(c=><button key={c.key} type="button" className={"chip"+(category===c.key?" chipActive":"")} onClick={()=>setCategory(c.key)}>{c.label}</button>)}</div>
-<select className="dateFilter" value={days} onChange={e=>setDays(Number(e.target.value))}>{RANGES.map(r=><option key={r.key} value={r.key}>{r.label}</option>)}</select>
+<input className="search" placeholder="Search role or company…" value={q} onChange={e=>{setQ(e.target.value);setCurrentPage(1)}}/>
+<div className="typeFilters">{CATEGORIES.map(c=><button key={c.key} type="button" className={"chip"+(category===c.key?" chipActive":"")} onClick={()=>{setCategory(c.key);setCurrentPage(1)}}>{c.label}</button>)}</div>
+<select className="dateFilter" value={days} onChange={e=>{setDays(Number(e.target.value));setCurrentPage(1)}}>{RANGES.map(r=><option key={r.key} value={r.key}>{r.label}</option>)}</select>
 </div>
 {!loading&&jobs.length===0?<p className="empty">No roles match these filters right now. Try widening your search or check back soon.</p>:<>
 <div className="listHead"><span>Role</span><span>Company</span><span>Gate</span><span>Status</span></div>
-{jobs.slice(0,60).map(j=><a href={j.url} target="_blank" rel="noreferrer" className="row" key={j.id}>
+{jobs.map(j=><a href={j.url} target="_blank" rel="noreferrer" className="row" key={j.id}>
 <span className="role">{j.title}<span className="roleLoc">{j.location||"Remote worldwide"}</span></span>
 <span className="company">{j.company}</span>
 <span className="gate">{j.source}<small>{timeAgo(j.publishedAt)}</small></span>
 <span className="status">Open</span>
 </a>)}
+<div className="pagination">{currentPage>1&&<button className="chip" onClick={()=>setCurrentPage(x=>x-1)}>← Previous</button>}{hasMore&&<button className="chip chipActive" onClick={()=>setCurrentPage(x=>x+1)}>Load more →</button>}</div>
 </>}
 </section>
 </main>

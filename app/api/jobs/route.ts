@@ -1,2 +1,2 @@
-import {NextResponse} from "next/server";import {fetchRemoteJobs} from "@/lib/job-sources";
-export async function GET(){try{const jobs=await fetchRemoteJobs();return NextResponse.json({count:jobs.length,jobs:jobs.slice(0,100),updatedAt:new Date().toISOString()});}catch{return NextResponse.json({error:"Unable to fetch jobs"},{status:500})}}
+import {NextResponse} from "next/server";import {fetchRemoteJobs} from "@/lib/job-sources";import {rankJobs} from "@/lib/match";
+export async function GET(){try{const jobs=rankJobs(await fetchRemoteJobs());return NextResponse.json({count:jobs.length,jobs:jobs.slice(0,100),updatedAt:new Date().toISOString()});}catch{return NextResponse.json({error:"Unable to fetch jobs"},{status:500})}}

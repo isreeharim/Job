@@ -29,5 +29,31 @@ async function fetchRemoteOK():Promise<Job[]>{const res=await fetch("https://rem
 async function fetchArbeitnow():Promise<Job[]>{const res=await fetch("https://www.arbeitnow.com/api/job-board-api",{next:{revalidate:3600}});if(!res.ok)return[];const data=await res.json();return(data.data??[]).filter((j:any)=>j.remote).map((j:any):Job=>({id:"Arbeitnow-"+j.slug,title:j.title,company:j.company_name,location:j.location||"Remote",url:j.url,description:j.description||"",source:"Arbeitnow",publishedAt:j.created_at?new Date(j.created_at*1000).toISOString():undefined}));}
 async function fetchJobicy():Promise<Job[]>{const res=await fetch("https://jobicy.com/api/v2/remote-jobs",{next:{revalidate:3600}});if(!res.ok)return[];const data=await res.json();return(data.jobs??[]).map((j:any):Job=>({id:"Jobicy-"+j.id,title:j.jobTitle,company:j.companyName,location:j.jobGeo||"Remote",url:j.url,description:j.jobExcerpt||j.jobDescription||"",source:"Jobicy",publishedAt:j.pubDate}));}
 const sources=[fetchRemotive,fetchRemoteOK,fetchArbeitnow,fetchJobicy];
-function dedupeKey(j:Job){return(j.title+"|"+j.company).toLowerCase().replace(/[^a-z0-9|]/g,"");}
-export async function fetchRemoteJobs():Promise<Job[]>{const seen=new Set<string>();const jobs:Job[]=[];for(const source of sources){try{const results=await source();for(const job of results){if(!isFresherJob(job))continue;const key=dedupeKey(job);if(seen.has(key))continue;seen.add(key);jobs.push(job);}}catch(e){console.error("Job source failed",source.name,e)}}return jobs.sort((a,b)=>new Date(b.publishedAt||0).getTime()-new Date(a.publishedAt||0).getTime());}
+function normalize(value:string){return value.toLowerCase().replace(/[^a-z0-9]/g,"");}
+function dedupeKey(j:Job){return normalize(j.title)+"|"+normalize(j.company);}
+function isValidJobUrl(value:string){
+  try{
+    const url=new URL(value);
+    return url.protocol==="https:"||url.protocol==="http:";
+  }catch{return false;}
+}
+export async function fetchRemoteJobs():Promise<Job[]>{
+  const seen=new Set<string>();
+  const seenUrls=new Set<string>();
+  const jobs:Job[]=[];
+  for(const source of sources){
+    try{
+      const results=await source();
+      for(const job of results){
+        if(!job.title||!job.company||!isValidJobUrl(job.url)||!isFresherJob(job))continue;
+        const key=dedupeKey(job);
+        const normalizedUrl=normalize(job.url);
+        if(seen.has(key)||seenUrls.has(normalizedUrl))continue;
+        seen.add(key);
+        seenUrls.add(normalizedUrl);
+        jobs.push(job);
+      }
+    }catch(e){console.error("Job source failed",source.name,e)}
+  }
+  return jobs.sort((a,b)=>new Date(b.publishedAt||0).getTime()-new Date(a.publishedAt||0).getTime());
+}

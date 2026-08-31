@@ -1,0 +1,1 @@
+export type AlertJob={id:string;title:string;company:string;url:string;matchScore:number};export function shouldAlert(job:AlertJob,minScore=80){return job.matchScore>=minScore}export function formatAlert(job:AlertJob){return "🔥 "+job.matchScore+"% match: "+job.title+" at "+job.company+"\nApply: "+job.url}

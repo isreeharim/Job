@@ -1,0 +1,3 @@
+import {Job} from "./types";
+const sources=[{name:"Remotive",url:"https://remotive.com/api/remote-jobs"}];
+export async function fetchRemoteJobs():Promise<Job[]>{const jobs:Job[]=[];for(const source of sources){try{const res=await fetch(source.url,{next:{revalidate:3600}});if(!res.ok)continue;const data=await res.json();for(const j of data.jobs??[]){jobs.push({id:`${source.name}-${j.id}`,title:j.title,company:j.company_name,location:j.candidate_required_location||"Remote",url:j.url,description:j.description||"",source:source.name,publishedAt:j.publication_date});}}catch(e){console.error("Job source failed",source.name,e)}}return jobs;}

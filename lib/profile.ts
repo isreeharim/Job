@@ -1,0 +1,1 @@
+export const defaultProfile={skills:["JavaScript","TypeScript","React","Next.js","HTML","CSS","Node.js","Git","GitHub","Supabase"],keywords:["frontend","web developer","software engineer","full stack","next.js","react"],preferredLocations:["Worldwide","Remote","India"]};

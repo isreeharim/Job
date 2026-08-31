@@ -1,4 +1,17 @@
 "use client";import {useEffect,useState} from "react";
+
+function timeAgo(date?:string){
+  if(!date)return "Recently";
+  const diff=Date.now()-new Date(date).getTime();
+  if(!Number.isFinite(diff)||diff<0)return "Recently";
+  const minutes=Math.floor(diff/60000);
+  if(minutes<60)return minutes<=1?"Just now":minutes+"m ago";
+  const hours=Math.floor(minutes/60);
+  if(hours<24)return hours+"h ago";
+  const days=Math.floor(hours/24);
+  if(days<30)return days+"d ago";
+  return new Date(date).toLocaleDateString();
+}
 type Job={id:string;title:string;company:string;location:string;url:string;source:string;publishedAt?:string};
 const CATEGORIES=[{key:"all",label:"All"},{key:"software",label:"💻 Software"},{key:"ai",label:"🤖 AI / ML"},{key:"data",label:"📊 Data"},{key:"design",label:"🎨 Design"},{key:"mobile",label:"📱 Mobile"},{key:"devops",label:"☁️ DevOps"},{key:"marketing",label:"📈 Marketing"}];
 const RANGES=[{key:0,label:"Any time"},{key:7,label:"Last 7 days"},{key:30,label:"Last 30 days"}];

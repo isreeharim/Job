@@ -38,9 +38,13 @@ export async function GET(req:NextRequest){
     const {error:upsertError}=await supabaseAdmin.from("jobs").upsert(rows,{onConflict:"id"});
     if(upsertError)return errorResponse("saving jobs",upsertError);
 
-    const notified=newJobs.length?await sendTelegramDigest(newJobs):false;
+    // Temporary bootstrap mode: send the whole current board when enabled.
+    // Set TELEGRAM_SEND_ALL=false (or remove it) to return to new-jobs-only alerts.
+    const sendAll=process.env.TELEGRAM_SEND_ALL==="true";
+    const jobsToNotify=sendAll?jobs:newJobs;
+    const notified=jobsToNotify.length?await sendTelegramDigest(jobsToNotify):false;
     return NextResponse.json({
-      ok:true,found:jobs.length,saved:rows.length,newJobs:newJobs.length,notified,
+      ok:true,found:jobs.length,saved:rows.length,newJobs:newJobs.length,notified,sendAll,
       checkedAt:new Date().toISOString()
     });
   }catch(error){

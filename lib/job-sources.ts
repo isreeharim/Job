@@ -1,7 +1,7 @@
 import {Job} from "./types";
-const senior=/\b(senior|sr\.?|staff|principal|lead|manager|director|architect|head of)\b/i;
-const fresher=/\b(junior|entry[ -]?level|graduate|new grad|fresher|intern(ship)?|trainee|associate|apprentice)\b/i;
-export function isFresherJob(job:Job){const text=(job.title+" "+job.description).replace(/<[^>]*>/g," ");if(senior.test(job.title))return false;return fresher.test(text);}
+const senior=/\b(senior|sr\.?|staff|principal|lead|manager|director|architect|head of|vp|vice president|chief)\b/i;
+const seniorExperience=/\b([5-9]|1\d)\+?\s*(?:years?|yrs?)\b/i;
+export function isFresherJob(job:Job){const text=(job.title+" "+job.description).replace(/<[^>]*>/g," ");if(senior.test(job.title))return false;if(seniorExperience.test(text))return false;return true;}
 async function fetchRemotive():Promise<Job[]>{const res=await fetch("https://remotive.com/api/remote-jobs",{next:{revalidate:3600}});if(!res.ok)return[];const data=await res.json();return(data.jobs??[]).map((j:any):Job=>({id:"Remotive-"+j.id,title:j.title,company:j.company_name,location:j.candidate_required_location||"Remote",url:j.url,description:j.description||"",source:"Remotive",publishedAt:j.publication_date}));}
 async function fetchRemoteOK():Promise<Job[]>{const res=await fetch("https://remoteok.com/api",{next:{revalidate:3600},headers:{"User-Agent":"Mozilla/5.0"}});if(!res.ok)return[];const data=await res.json();return data.filter((j:any)=>j.id).map((j:any):Job=>({id:"RemoteOK-"+j.id,title:j.position,company:j.company,location:j.location||"Remote",url:j.url||`https://remoteok.com/remote-jobs/${j.id}`,description:j.description||"",source:"RemoteOK",publishedAt:j.date}));}
 async function fetchArbeitnow():Promise<Job[]>{const res=await fetch("https://www.arbeitnow.com/api/job-board-api",{next:{revalidate:3600}});if(!res.ok)return[];const data=await res.json();return(data.data??[]).filter((j:any)=>j.remote).map((j:any):Job=>({id:"Arbeitnow-"+j.slug,title:j.title,company:j.company_name,location:j.location||"Remote",url:j.url,description:j.description||"",source:"Arbeitnow",publishedAt:j.created_at?new Date(j.created_at*1000).toISOString():undefined}));}

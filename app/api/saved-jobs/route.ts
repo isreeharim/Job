@@ -1,1 +1,1 @@
-import {NextResponse} from "next/server";import {supabase} from "@/lib/supabase";export async function GET(){if(!supabase)return NextResponse.json({error:"Supabase not configured"},{status:503});return NextResponse.json({message:"Connect authenticated server client in the next phase."})}
+import {NextResponse} from "next/server";export async function GET(){return NextResponse.json({message:"Saved jobs require accounts and are currently disabled."},{status:410})}

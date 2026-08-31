@@ -6,7 +6,7 @@ AI-powered remote/WFH job discovery and tracking.
 
 - [x] Phase 1 — Foundation
 - [x] Phase 2 — Live job ingestion
-- [ ] Phase 3 — AI matching engine
+- [x] Phase 3 — AI matching engine
 - [ ] Phase 4 — Database & authentication
 - [ ] Phase 5 — Notifications
 - [ ] Phase 6 — Production deployment

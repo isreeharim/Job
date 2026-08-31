@@ -1,0 +1,4 @@
+import {Job} from "./types";import {defaultProfile} from "./profile";
+export type MatchResult=Job&{matchScore:number;matchedSkills:string[];reasons:string[]};
+export function matchJob(job:Job):MatchResult{const text=`${job.title} ${job.description}`.toLowerCase();const matchedSkills=defaultProfile.skills.filter(s=>text.includes(s.toLowerCase()));const matchedKeywords=defaultProfile.keywords.filter(k=>text.includes(k.toLowerCase()));let score=Math.min(100,matchedSkills.length*9+matchedKeywords.length*12);if(/remote|worldwide/.test(job.location.toLowerCase()))score+=10;if(/senior|staff|principal/.test(job.title.toLowerCase()))score-=15;score=Math.max(0,Math.min(100,score));const reasons=[...matchedSkills.map(s=>`Matches ${s}`),...matchedKeywords.slice(0,2).map(k=>`Relevant role: ${k}`)];return {...job,matchScore:score,matchedSkills,reasons};}
+export function rankJobs(jobs:Job[]){return jobs.map(matchJob).sort((a,b)=>b.matchScore-a.matchScore);}

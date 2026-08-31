@@ -1,20 +1,44 @@
-# Remote Job Hunter
+# RemoteFlow
 
-AI-powered remote/WFH job discovery and tracking.
+**Remote jobs for freshers. Worldwide.**
 
-## Phases
+RemoteFlow collects remote and work-from-home opportunities from multiple job sources and filters them for fresher-friendly candidates.
 
-- [x] Phase 1 — Foundation
-- [x] Phase 2 — Live job ingestion
-- [x] Phase 3 — AI matching engine
-- [x] Phase 4 — Database & authentication
-- [x] Phase 5 — Notifications
-- [x] Phase 6 — Production deployment
+## What it does
 
-## Phase 2
+- 🎓 Focuses on fresher, entry-level, junior, graduate and internship roles
+- 🌍 Collects worldwide remote opportunities
+- 🚫 Filters obvious senior and experienced roles
+- 🔁 Deduplicates jobs across sources
+- 🗄️ Stores jobs in Supabase
+- ⚡ Serves the website from the database
+- 🔔 Sends a Telegram digest when genuinely new jobs are discovered
+- 📱 Mobile-friendly interface
 
-The app fetches live remote opportunities through a server-side ingestion layer, exposes them at `/api/jobs`, and includes a protected cron endpoint at `/api/cron` for scheduled checks.
+## Architecture
+
+Job sources → Fresher filter → Deduplication → Daily Vercel Cron → Supabase → Website + Telegram alerts
+
+## Environment variables
+
+```
+SUPABASE_URL=
+SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+CRON_SECRET=
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
+```
+
+Never expose `SUPABASE_SERVICE_ROLE_KEY` in the browser.
 
 ## Deployment
 
-See `DEPLOYMENT.md` for Supabase, environment variables, CI, and Vercel deployment steps.
+1. Run `supabase/schema.sql` in the Supabase SQL editor.
+2. Configure the environment variables in Vercel.
+3. Deploy the `main` branch.
+4. The daily cron calls `/api/cron`.
+
+## Notes
+
+RemoteFlow is intentionally public and does not require user authentication.

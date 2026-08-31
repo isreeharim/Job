@@ -1,10 +1,15 @@
 import {NextRequest,NextResponse} from "next/server";
 import {supabase,supabaseAdmin} from "@/lib/supabase";
 
-const TYPE_KEYWORDS:Record<string,string>={
-  internship:"intern",
-  junior:"junior",
-  graduate:"graduate"
+const CATEGORY_KEYWORDS:Record<string,string[]>={
+  software:["software","developer","engineer","frontend","front-end","backend","back-end","full stack","fullstack","web","qa","test"],
+  ai:["ai","machine learning","ml ","artificial intelligence","llm","data scientist"],
+  data:["data","analytics","analyst","business intelligence","bi ","database"],
+  design:["designer","design","ux","ui ","product design"],
+  mobile:["android","ios","mobile developer","react native","flutter"],
+  devops:["devops","cloud","sre","site reliability","platform engineer","infrastructure"],
+  marketing:["marketing","seo","content","social media","growth"],
+  other:[]
 };
 
 export const runtime="nodejs";
@@ -16,7 +21,7 @@ export async function GET(req:NextRequest){
 
   const {searchParams}=new URL(req.url);
   const q=searchParams.get("q")?.trim();
-  const type=searchParams.get("type");
+  const category=searchParams.get("category");
   const days=Number(searchParams.get("days")||0);
 
   let query=client
@@ -29,8 +34,7 @@ export async function GET(req:NextRequest){
     const safe=q.replace(/[,%()]/g," ").trim();
     if(safe)query=query.or(`title.ilike.%${safe}%,company.ilike.%${safe}%`);
   }
-  if(type&&TYPE_KEYWORDS[type])
-    query=query.ilike("title",`%${TYPE_KEYWORDS[type]}%`);
+  // Category matching is applied below so one category can support several keywords.
   if(days>0)
     query=query.gte("published_at",new Date(Date.now()-days*86400000).toISOString());
 
@@ -40,13 +44,21 @@ export async function GET(req:NextRequest){
     return NextResponse.json({error:"Unable to fetch jobs",detail:error.message},{status:500});
   }
 
-  const jobs=(data||[]).map(r=>({
+  let jobs=(data||[]).map(r=>({
     id:r.id,title:r.title,company:r.company,location:r.location,url:r.url,
     description:r.description,source:r.source,publishedAt:r.published_at
   }));
 
+  if(category&&category!=="all"&&CATEGORY_KEYWORDS[category]){
+    const keywords=CATEGORY_KEYWORDS[category];
+    jobs=jobs.filter(job=>{
+      const text=(job.title+" "+(job.description||"")).toLowerCase();
+      return keywords.some(keyword=>text.includes(keyword));
+    });
+  }
+
   return NextResponse.json(
-    {count:jobs.length,jobs,updatedAt:new Date().toISOString(),audience:"freshers"},
+    {count:jobs.length,jobs,updatedAt:new Date().toISOString(),audience:"freshers",category:category||"all"},
     {headers:{"Cache-Control":"no-store, max-age=0"}}
   );
 }

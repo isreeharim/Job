@@ -33,3 +33,19 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
 .company{grid-area:company;font-size:13px}
 .gate{display:none}
 }
+.auth{max-width:640px;margin:auto;padding:22px 24px 90px}
+.backLink{display:inline-block;text-decoration:none;color:var(--ink-dim);font-size:13px;margin-bottom:36px}
+.backLink:hover{color:var(--amber)}
+.auth>span{font-size:13px;color:var(--teal);font-weight:600;display:block;margin-bottom:18px}
+.auth h1{font-family:var(--font-display),sans-serif;font-weight:800;text-transform:uppercase;font-size:clamp(38px,6vw,56px);line-height:.95;letter-spacing:.3px;color:var(--amber);margin:0 0 16px}
+.auth>p{font-size:16px;line-height:1.7;color:var(--ink-dim);margin:0 0 40px;max-width:440px}
+.ticket{border:1px solid var(--hairline);border-radius:10px;background:var(--panel);display:grid;grid-template-columns:1fr 180px;overflow:hidden}
+.ticketMain{padding:28px 30px}
+.ticketMain label{display:block;font-size:13px;color:var(--ink-dim);margin-bottom:16px}
+.ticketMain input[type="range"]{width:100%;margin-top:14px;accent-color:var(--amber)}
+.matchScore{font-family:var(--font-display),sans-serif;font-size:34px;color:var(--ink);font-weight:700}
+.ticketStub{border-left:1px dashed var(--hairline);padding:28px 20px;display:flex;flex-direction:column;justify-content:space-between;align-items:center;text-align:center;gap:16px}
+.ticketStub button{background:var(--amber);color:var(--bg);border:none;border-radius:6px;padding:12px 16px;font-weight:700;font-size:13px;cursor:pointer;width:100%}
+.ticketStub button:hover{opacity:.9}
+.status{display:block;margin-top:20px;font-size:13px;color:var(--teal);min-height:18px}
+@media(max-width:560px){.ticket{grid-template-columns:1fr}.ticketStub{border-left:none;border-top:1px dashed var(--hairline)}}

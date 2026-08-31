@@ -1,1 +1,22 @@
-"use client";import {useState} from "react";export default function Alerts(){const[min,setMin]=useState(80);const[status,setStatus]=useState("");return <main className="auth"><span>JOB ALERTS</span><h1>Never miss<br/>a great match.</h1><p>Set your preferred minimum AI match score.</p><label>Minimum match score: {min}%<input type="range" min="50" max="100" value={min} onChange={e=>setMin(+e.target.value)}/></label><button onClick={()=>setStatus("Alerts configured for "+min+"%+ matches.")}>Save alert preference →</button><small>{status}</small></main>}
+"use client";import {useState} from "react";
+export default function Alerts(){
+const[min,setMin]=useState(80);
+const[status,setStatus]=useState("");
+return <main className="auth">
+<a className="backLink" href="/">← Board</a>
+<span>Boarding pass · Alerts</span>
+<h1>Never miss<br/>your gate call.</h1>
+<p>Set the minimum AI match score a role needs before we notify you it's boarding.</p>
+<div className="ticket">
+<div className="ticketMain">
+<label>Minimum match score<br/><span className="matchScore">{min}%</span>
+<input type="range" min="50" max="100" value={min} onChange={e=>setMin(+e.target.value)}/>
+</label>
+</div>
+<div className="ticketStub">
+<button onClick={()=>setStatus(`Alerts set for ${min}%+ matches.`)}>Save preference</button>
+</div>
+</div>
+<small className="status">{status}</small>
+</main>
+}

@@ -9,8 +9,12 @@ AI-powered remote/WFH job discovery and tracking.
 - [x] Phase 3 — AI matching engine
 - [x] Phase 4 — Database & authentication
 - [x] Phase 5 — Notifications
-- [ ] Phase 6 — Production deployment
+- [x] Phase 6 — Production deployment
 
 ## Phase 2
 
 The app fetches live remote opportunities through a server-side ingestion layer, exposes them at `/api/jobs`, and includes a protected cron endpoint at `/api/cron` for scheduled checks.
+
+## Deployment
+
+See `DEPLOYMENT.md` for Supabase, environment variables, CI, and Vercel deployment steps.

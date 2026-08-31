@@ -1,22 +1,18 @@
-"use client";import {useState} from "react";
 export default function Alerts(){
-const[min,setMin]=useState(80);
-const[status,setStatus]=useState("");
+const channelUrl=process.env.NEXT_PUBLIC_TELEGRAM_CHANNEL_URL;
 return <main className="auth">
 <a className="backLink" href="/">← Board</a>
 <span>Boarding pass · Alerts</span>
-<h1>Never miss<br/>your gate call.</h1>
-<p>Set the minimum AI match score a role needs before we notify you it's boarding.</p>
+<h1>Never miss<br/>a new arrival.</h1>
+<p>New fresher-friendly remote roles are broadcast the moment they're found on the board — no account or sign-up needed.</p>
 <div className="ticket">
 <div className="ticketMain">
-<label>Minimum match score<br/><span className="matchScore">{min}%</span>
-<input type="range" min="50" max="100" value={min} onChange={e=>setMin(+e.target.value)}/>
-</label>
+<label>Delivery channel<br/><span className="matchScore">Telegram</span></label>
+<p style={{fontSize:13,color:"var(--ink-dim)",marginTop:14,lineHeight:1.6}}>Every new role that clears the fresher filter gets posted here as soon as the board updates.</p>
 </div>
 <div className="ticketStub">
-<button onClick={()=>setStatus(`Alerts set for ${min}%+ matches.`)}>Save preference</button>
+{channelUrl?<a className="ticketBtn" href={channelUrl} target="_blank" rel="noreferrer">Join channel</a>:<span className="ticketBtn ticketBtnDisabled">Coming soon</span>}
 </div>
 </div>
-<small className="status">{status}</small>
 </main>
 }

@@ -23,6 +23,7 @@ const[category,setCategory]=useState("all");
 const[days,setDays]=useState(0);
 const[currentPage,setCurrentPage]=useState(1);
 const[hasMore,setHasMore]=useState(false);
+const[totalCount,setTotalCount]=useState(0);
 useEffect(()=>{
 setLoading(true);
 const params=new URLSearchParams();
@@ -31,7 +32,7 @@ if(category!=="all")params.set("category",category);
 if(days)params.set("days",String(days));
 params.set("page",String(currentPage));
 params.set("limit","20");
-const t=setTimeout(()=>{fetch("/api/jobs?"+params.toString()).then(r=>r.json()).then(d=>{setJobs(d.jobs||[]);setHasMore(Boolean(d.hasMore));}).catch(()=>{setJobs([]);setHasMore(false);}).finally(()=>setLoading(false))},300);
+const t=setTimeout(()=>{fetch("/api/jobs?"+params.toString()).then(r=>r.json()).then(d=>{setJobs(d.jobs||[]);setHasMore(Boolean(d.hasMore));setTotalCount(Number(d.count||0));}).catch(()=>{setJobs([]);setHasMore(false);setTotalCount(0);}).finally(()=>setLoading(false))},300);
 return ()=>clearTimeout(t);
 },[q,category,days,currentPage]);
 return <main className="board">
@@ -47,7 +48,7 @@ return <main className="board">
 <section id="jobs">
 <div className="boardMeta">
 <h2>{loading?"Boarding…":"Today's board"}</h2>
-<span>{loading?"":`${jobs.length} roles open`}</span>
+<span>{loading?"":`${totalCount} roles open`}</span>
 </div>
 <div className="filters">
 <input className="search" placeholder="Search role or company…" value={q} onChange={e=>{setQ(e.target.value);setCurrentPage(1)}}/>

@@ -22,6 +22,15 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
 .company{font-size:14px;color:var(--ink-dim)}
 .gate{font-size:12px;color:var(--ink-dim)}
 .status{justify-self:start;font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--teal);border:1px solid var(--teal);border-radius:4px;padding:5px 9px;white-space:nowrap}
+.filters{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:4px 4px 24px}
+.search{flex:1;min-width:200px;background:var(--panel);border:1px solid var(--hairline);border-radius:6px;padding:10px 12px;color:var(--ink);font-size:14px}
+.search::placeholder{color:var(--ink-dim)}
+.search:focus{outline:none;border-color:var(--amber)}
+.typeFilters{display:flex;gap:8px;flex-wrap:wrap}
+.chip{background:transparent;border:1px solid var(--hairline);color:var(--ink-dim);border-radius:999px;padding:8px 14px;font-size:12px;cursor:pointer}
+.chip:hover{border-color:var(--amber)}
+.chipActive{background:var(--amber);border-color:var(--amber);color:var(--bg);font-weight:600}
+.dateFilter{background:var(--panel);border:1px solid var(--hairline);border-radius:6px;padding:10px 12px;color:var(--ink);font-size:13px}
 .empty{padding:60px 4px;color:var(--ink-dim);font-size:15px;line-height:1.7;max-width:480px}
 @media(max-width:700px){
 .board{padding:18px 18px 70px}
@@ -33,6 +42,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
 .company{grid-area:company;font-size:13px}
 .gate{display:none}
 }
+@media(max-width:700px){.filters{flex-direction:column;align-items:stretch}}
 .auth{max-width:640px;margin:auto;padding:22px 24px 90px}
 .backLink{display:inline-block;text-decoration:none;color:var(--ink-dim);font-size:13px;margin-bottom:36px}
 .backLink:hover{color:var(--amber)}
@@ -45,7 +55,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
 .ticketMain input[type="range"]{width:100%;margin-top:14px;accent-color:var(--amber)}
 .matchScore{font-family:var(--font-display),sans-serif;font-size:34px;color:var(--ink);font-weight:700}
 .ticketStub{border-left:1px dashed var(--hairline);padding:28px 20px;display:flex;flex-direction:column;justify-content:space-between;align-items:center;text-align:center;gap:16px}
-.ticketStub button{background:var(--amber);color:var(--bg);border:none;border-radius:6px;padding:12px 16px;font-weight:700;font-size:13px;cursor:pointer;width:100%}
-.ticketStub button:hover{opacity:.9}
-.status{display:block;margin-top:20px;font-size:13px;color:var(--teal);min-height:18px}
+.ticketBtn{background:var(--amber);color:var(--bg);border:none;border-radius:6px;padding:12px 16px;font-weight:700;font-size:13px;cursor:pointer;width:100%;text-decoration:none;display:block}
+.ticketBtn:hover{opacity:.9}
+.ticketBtnDisabled{background:var(--hairline);color:var(--ink-dim);cursor:not-allowed}
 @media(max-width:560px){.ticket{grid-template-columns:1fr}.ticketStub{border-left:none;border-top:1px dashed var(--hairline)}}

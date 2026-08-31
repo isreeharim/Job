@@ -1,22 +1,22 @@
 "use client";import {useEffect,useState} from "react";
 type Job={id:string;title:string;company:string;location:string;url:string;source:string;publishedAt?:string};
-const TYPES=[{key:"all",label:"All"},{key:"internship",label:"Internship"},{key:"junior",label:"Junior"},{key:"graduate",label:"Graduate"}];
+const CATEGORIES=[{key:"all",label:"All"},{key:"software",label:"💻 Software"},{key:"ai",label:"🤖 AI / ML"},{key:"data",label:"📊 Data"},{key:"design",label:"🎨 Design"},{key:"mobile",label:"📱 Mobile"},{key:"devops",label:"☁️ DevOps"},{key:"marketing",label:"📈 Marketing"}];
 const RANGES=[{key:0,label:"Any time"},{key:7,label:"Last 7 days"},{key:30,label:"Last 30 days"}];
 export default function Home(){
 const[jobs,setJobs]=useState<Job[]>([]);
 const[loading,setLoading]=useState(true);
 const[q,setQ]=useState("");
-const[type,setType]=useState("all");
+const[category,setCategory]=useState("all");
 const[days,setDays]=useState(0);
 useEffect(()=>{
 setLoading(true);
 const params=new URLSearchParams();
 if(q)params.set("q",q);
-if(type!=="all")params.set("type",type);
+if(category!=="all")params.set("category",category);
 if(days)params.set("days",String(days));
 const t=setTimeout(()=>{fetch("/api/jobs?"+params.toString()).then(r=>r.json()).then(d=>setJobs(d.jobs||[])).catch(()=>setJobs([])).finally(()=>setLoading(false))},300);
 return ()=>clearTimeout(t);
-},[q,type,days]);
+},[q,category,days]);
 return <main className="board">
 <header className="boardHeader">
 <a className="brand" href="/"><span className="brandMark">✈</span>RemoteFlow</a>
@@ -34,7 +34,7 @@ return <main className="board">
 </div>
 <div className="filters">
 <input className="search" placeholder="Search role or company…" value={q} onChange={e=>setQ(e.target.value)}/>
-<div className="typeFilters">{TYPES.map(t=><button key={t.key} type="button" className={"chip"+(type===t.key?" chipActive":"")} onClick={()=>setType(t.key)}>{t.label}</button>)}</div>
+<div className="typeFilters">{CATEGORIES.map(c=><button key={c.key} type="button" className={"chip"+(category===c.key?" chipActive":"")} onClick={()=>setCategory(c.key)}>{c.label}</button>)}</div>
 <select className="dateFilter" value={days} onChange={e=>setDays(Number(e.target.value))}>{RANGES.map(r=><option key={r.key} value={r.key}>{r.label}</option>)}</select>
 </div>
 {!loading&&jobs.length===0?<p className="empty">No roles match these filters right now. Try widening your search or check back soon.</p>:<>

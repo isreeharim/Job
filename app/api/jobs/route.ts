@@ -23,12 +23,16 @@ export async function GET(req:NextRequest){
   const q=searchParams.get("q")?.trim();
   const category=searchParams.get("category");
   const days=Number(searchParams.get("days")||0);
+  const page=Math.max(1,Number(searchParams.get("page")||1));
+  const limit=Math.min(50,Math.max(1,Number(searchParams.get("limit")||20)));
+  const from=(page-1)*limit;
+  const to=from+limit-1;
 
   let query=client
     .from("jobs")
-    .select("*")
+    .select("*",{count:"exact"})
     .order("published_at",{ascending:false})
-    .limit(100);
+    .range(from,to);
 
   if(q){
     const safe=q.replace(/[,%()]/g," ").trim();
@@ -38,7 +42,7 @@ export async function GET(req:NextRequest){
   if(days>0)
     query=query.gte("published_at",new Date(Date.now()-days*86400000).toISOString());
 
-  const {data,error}=await query;
+  const {data,error,count}=await query;
   if(error){
     console.error("Unable to fetch jobs",error);
     return NextResponse.json({error:"Unable to fetch jobs",detail:error.message},{status:500});
@@ -58,7 +62,7 @@ export async function GET(req:NextRequest){
   }
 
   return NextResponse.json(
-    {count:jobs.length,jobs,updatedAt:new Date().toISOString(),audience:"freshers",category:category||"all"},
+    {count:count??jobs.length,returned:jobs.length,page,limit,hasMore:jobs.length===limit,jobs,updatedAt:new Date().toISOString(),audience:"freshers",category:category||"all"},
     {headers:{"Cache-Control":"no-store, max-age=0"}}
   );
 }

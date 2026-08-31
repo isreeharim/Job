@@ -27,18 +27,25 @@ export async function GET(req:NextRequest){
   const limit=Math.min(50,Math.max(1,Number(searchParams.get("limit")||20)));
   const from=(page-1)*limit;
   const to=from+limit-1;
+  const categoryKeywords=category&&category!=="all"?CATEGORY_KEYWORDS[category]:undefined;
 
   let query=client
     .from("jobs")
     .select("*",{count:"exact"})
     .order("published_at",{ascending:false})
-    .range(from,to);
+    ;
+
+  if(categoryKeywords?.length){
+    const categoryQuery=categoryKeywords.map(k=>`title.ilike.%${k}%,description.ilike.%${k}%`).join(",");
+    query=query.or(categoryQuery);
+  }
+  query=query.range(from,to);
 
   if(q){
     const safe=q.replace(/[,%()]/g," ").trim();
     if(safe)query=query.or(`title.ilike.%${safe}%,company.ilike.%${safe}%`);
   }
-  // Category matching is applied below so one category can support several keywords.
+
   if(days>0)
     query=query.gte("published_at",new Date(Date.now()-days*86400000).toISOString());
 
@@ -53,16 +60,10 @@ export async function GET(req:NextRequest){
     description:r.description,source:r.source,publishedAt:r.published_at
   }));
 
-  if(category&&category!=="all"&&CATEGORY_KEYWORDS[category]){
-    const keywords=CATEGORY_KEYWORDS[category];
-    jobs=jobs.filter(job=>{
-      const text=(job.title+" "+(job.description||"")).toLowerCase();
-      return keywords.some(keyword=>text.includes(keyword));
-    });
-  }
+
 
   return NextResponse.json(
-    {count:count??jobs.length,returned:jobs.length,page,limit,hasMore:jobs.length===limit,jobs,updatedAt:new Date().toISOString(),audience:"freshers",category:category||"all"},
+    {count:count??jobs.length,returned:jobs.length,page,limit,hasMore:(count??0)>page*limit,jobs,updatedAt:new Date().toISOString(),audience:"freshers",category:category||"all"},
     {headers:{"Cache-Control":"no-store, max-age=0"}}
   );
 }

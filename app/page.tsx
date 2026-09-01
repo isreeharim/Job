@@ -13,7 +13,7 @@ function timeAgo(date?:string){
   return new Date(date).toLocaleDateString();
 }
 type Job={id:string;title:string;company:string;location:string;url:string;source:string;publishedAt?:string};
-const CATEGORIES=[{key:"all",label:"All"},{key:"software",label:"💻 Software"},{key:"ai",label:"🤖 AI / ML"},{key:"data",label:"📊 Data"},{key:"design",label:"🎨 Design"},{key:"mobile",label:"📱 Mobile"},{key:"devops",label:"☁️ DevOps"},{key:"marketing",label:"📈 Marketing"}];
+const CATEGORIES=[{key:"all",label:"All"},{key:"software",label:"💻 Software"},{key:"ai",label:"🤖 AI / ML"},{key:"data",label:"📊 Data"},{key:"design",label:"🎨 Design"},{key:"mobile",label:"📱 Mobile"},{key:"devops",label:"☁️ DevOps"},{key:"marketing",label:"📈 Marketing"},{key:"security",label:"🔒 Security"},{key:"product",label:"📦 Product"},{key:"other",label:"Other"}];
 const RANGES=[{key:0,label:"Any time"},{key:7,label:"Last 7 days"},{key:30,label:"Last 30 days"}];
 export default function Home(){
 const[jobs,setJobs]=useState<Job[]>([]);

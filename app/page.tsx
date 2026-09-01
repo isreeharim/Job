@@ -51,7 +51,7 @@ return <main className="board">
 <span>{loading?"":`${totalCount} roles open`}</span>
 </div>
 <div className="filters">
-<input className="search" placeholder="Search role or company…" value={q} onChange={e=>{setQ(e.target.value);setCurrentPage(1)}}/>
+<input className="search" placeholder="Search role, company, skill, or location…" value={q} onChange={e=>{setQ(e.target.value);setCurrentPage(1)}}/>
 <div className="typeFilters">{CATEGORIES.map(c=><button key={c.key} type="button" className={"chip"+(category===c.key?" chipActive":"")} onClick={()=>{setCategory(c.key);setCurrentPage(1)}}>{c.label}</button>)}</div>
 <select className="dateFilter" value={days} onChange={e=>{setDays(Number(e.target.value));setCurrentPage(1)}}>{RANGES.map(r=><option key={r.key} value={r.key}>{r.label}</option>)}</select>
 </div>

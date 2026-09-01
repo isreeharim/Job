@@ -62,19 +62,25 @@ export async function GET(req:NextRequest){
     // Retry-safe notifications: only send current jobs that have not been marked delivered.
     const {data:pending,error:pendingError}=await supabaseAdmin
       .from("jobs").select("id,title,company,location,url,description,source,published_at")
-      .in("id",ids).is("telegram_notified_at",null);
+      .in("id",ids).is("telegram_notified_at",null).is("telegram_notification_error",null);
     if(pendingError)return errorResponse("loading pending notifications",pendingError);
 
     const jobsToNotify=(pending||[]).map(row=>({
       id:row.id,title:row.title,company:row.company,location:row.location||"",
       url:row.url,description:row.description||"",source:row.source,publishedAt:row.published_at||undefined
     }));
-    const notification=jobsToNotify.length?await sendTelegramDigest(jobsToNotify):{ok:true,sentIds:[]};
+    const notification=jobsToNotify.length?await sendTelegramDigest(jobsToNotify):{ok:true,sentIds:[],failedIds:[]};
     if(notification.sentIds.length){
       const {error:markError}=await supabaseAdmin.from("jobs")
-        .update({telegram_notified_at:new Date().toISOString()})
+        .update({telegram_notified_at:new Date().toISOString(),telegram_notification_error:null})
         .in("id",notification.sentIds);
       if(markError)return errorResponse("marking delivered notifications",markError);
+    }
+    if(notification.failedIds.length){
+      const {error:failError}=await supabaseAdmin.from("jobs")
+        .update({telegram_notification_error:"URL too long for Telegram message"})
+        .in("id",notification.failedIds);
+      if(failError)return errorResponse("recording permanent notification failures",failError);
     }
 
     return NextResponse.json({

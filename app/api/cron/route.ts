@@ -22,6 +22,11 @@ export async function GET(req:NextRequest){
     return NextResponse.json({error:"Supabase server credentials are not configured"},{status:500});
 
   try{
+    // Single-run lock prevents overlapping scheduler/manual invocations.
+    const {data:lock,error:lockError}=await supabaseAdmin.rpc("try_acquire_job_refresh_lock");
+    if(lockError)return errorResponse("acquiring refresh lock",lockError);
+    if(!lock)return NextResponse.json({ok:true,skipped:true,reason:"refresh already running",checkedAt:new Date().toISOString()});
+
     const jobs=await fetchRemoteJobs();
 
     // Keep the board fresh: remove jobs older than 30 days by publication date.
@@ -29,7 +34,7 @@ export async function GET(req:NextRequest){
     const {error:cleanupError}=await supabaseAdmin
       .from("jobs")
       .delete()
-      .lt("published_at",expiryDate);
+      .or(`published_at.lt.${expiryDate},and(published_at.is.null,created_at.lt.${expiryDate})`);
     if(cleanupError)return errorResponse("cleaning expired jobs",cleanupError);
 
     if(!jobs.length)

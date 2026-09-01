@@ -29,10 +29,12 @@ export async function GET(req:NextRequest){
     if(safe)query=query.or(`title.ilike.%${safe}%,company.ilike.%${safe}%,description.ilike.%${safe}%,location.ilike.%${safe}%`);
   }
 
-  if(days>0)
-    query=query.gte("published_at",new Date(Date.now()-days*86400000).toISOString());
+  if(days>0){
+    const since=new Date(Date.now()-days*86400000).toISOString();
+    query=query.or(`published_at.gte.${since},and(published_at.is.null,created_at.gte.${since})`);
+  }
 
-  query=query.order("published_at",{ascending:false}).range(from,to);
+  query=query.order("published_at",{ascending:false,nullsFirst:false}).order("created_at",{ascending:false}).range(from,to);
 
   const {data,error,count}=await query;
   if(error){

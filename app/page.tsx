@@ -32,8 +32,9 @@ if(category!=="all")params.set("category",category);
 if(days)params.set("days",String(days));
 params.set("page",String(currentPage));
 params.set("limit","20");
-const t=setTimeout(()=>{fetch("/api/jobs?"+params.toString()).then(r=>r.json()).then(d=>{setJobs(d.jobs||[]);setHasMore(Boolean(d.hasMore));setTotalCount(Number(d.count||0));}).catch(()=>{setJobs([]);setHasMore(false);setTotalCount(0);}).finally(()=>setLoading(false))},300);
-return ()=>clearTimeout(t);
+const controller=new AbortController();
+const t=setTimeout(()=>{fetch("/api/jobs?"+params.toString(),{signal:controller.signal}).then(r=>{if(!r.ok)throw new Error("Failed to load jobs");return r.json()}).then(d=>{setJobs(d.jobs||[]);setHasMore(Boolean(d.hasMore));setTotalCount(Number(d.count||0));}).catch(error=>{if(error?.name==="AbortError")return;setJobs([]);setHasMore(false);setTotalCount(0);}).finally(()=>{if(!controller.signal.aborted)setLoading(false)})},300);
+return ()=>{clearTimeout(t);controller.abort();};
 },[q,category,days,currentPage]);
 return <main className="board">
 <header className="boardHeader">

@@ -85,7 +85,7 @@ export default function Home(){
       <Link className="brand" href="/"><span className="brandMark">✈</span>RemoteFlow</Link>
       <nav className="headerNav">
         <a href="#jobs">Explore</a>
-        <Link className="alertLink" href="/alerts">Alerts</Link>
+        <Link className="alertLink" href="/saved">Saved</Link><Link className="alertLink" href="/applications">Tracker</Link><Link className="alertLink" href="/alerts">Alerts</Link>
       </nav>
     </header>
 
@@ -106,12 +106,12 @@ export default function Home(){
         <button className="textButton" onClick={()=>{setDays(1);setCurrentPage(1);document.getElementById("jobs")?.scrollIntoView({behavior:"smooth"});}}>View all →</button>
       </div>
       <div className="freshGrid">
-        {freshJobs.map(job=><a href={job.url} target="_blank" rel="noreferrer" className="freshCard" key={job.id}>
+        {freshJobs.map(job=><Link href={"/jobs/"+encodeURIComponent(job.id)} className="freshCard" key={job.id}>
           <span className="freshBadge">NEW · {timeAgo(job.publishedAt)}</span>
           <strong>{job.title}</strong>
           <span>{job.company}</span>
           <small>{job.location||"Worldwide"} · {job.source}</small>
-        </a>)}
+        </Link>)}
       </div>
     </section>}
 
@@ -146,7 +146,7 @@ export default function Home(){
 
       {!loading&&jobs.length===0?<div className="empty"><h3>No roles match that route.</h3><p>Try a broader skill, another location, or remove some filters.</p><button className="chip" onClick={clearSearch}>Clear filters</button></div>:<>
         <div className="listHead"><span>Role</span><span>Company</span><span>Source</span><span>Status</span></div>
-        {(jobs||[]).map(job=><a href={job.url} target="_blank" rel="noreferrer" className="row" key={job.id}>
+        {(jobs||[]).map(job=><Link href={"/jobs/"+encodeURIComponent(job.id)} className="row" key={job.id}>
           <span className="role">{job.title}<span className="roleLoc">📍 {job.location||"Worldwide"}</span></span>
           <span className="company">{job.company}</span>
           <span className="gate">{job.source}<small>{timeAgo(job.publishedAt)}</small></span>

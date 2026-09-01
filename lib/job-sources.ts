@@ -86,6 +86,7 @@ export async function fetchRemoteJobs():Promise<Job[]>{
       seen.add(key);seenUrls.add(normalizedUrl);jobs.push(job);
     }
   });
+  if(jobs.length===0&&rawJobs>0)throw new Error("All fetched jobs were rejected by validation/fresher filters");
   const timestamp=(value?:string)=>value?new Date(value).getTime():0;
   return jobs.sort((a,b)=>timestamp(b.publishedAt)-timestamp(a.publishedAt));
 }

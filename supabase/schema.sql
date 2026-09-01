@@ -1,3 +1,5 @@
+create extension if not exists pgcrypto;
+
 create table if not exists public.jobs (
   id text primary key,
   title text not null,

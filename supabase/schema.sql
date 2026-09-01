@@ -52,7 +52,6 @@ begin
 end;
 $$;
 
-alter table public.jobs add column if not exists telegram_notification_error text;
 create index if not exists jobs_notification_error_idx on public.jobs(telegram_notification_error) where telegram_notification_error is not null;
 
 create table if not exists public.job_refresh_runs (

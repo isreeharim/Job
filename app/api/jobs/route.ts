@@ -45,7 +45,7 @@ export async function GET(req:NextRequest){
     return NextResponse.json({error:"Unable to fetch jobs",detail:error.message},{status:500});
   }
 
-  let jobs=(data||[]).map(r=>({
+  const jobs=(data||[]).map(r=>({
     id:r.id,title:r.title,company:r.company,location:r.location,url:r.url,
     description:r.description,source:r.source,publishedAt:r.published_at
   }));

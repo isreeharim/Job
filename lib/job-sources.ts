@@ -17,9 +17,9 @@ export function isFresherJob(job:Job){
   // Allow entry-level ranges such as 0-2 years, but reject roles whose
   // minimum required experience is already 2+ years.
   const ranges=[...text.matchAll(experienceRange)].map(m=>[parseInt(m[1],10),parseInt(m[2],10)]);
-  const rangeSpans=ranges.map(([min,max])=>new RegExp(`\\b${min}\\s*(?:-|to)\\s*${max}\\s*(?:years?|yrs?)\\b`,"i"));
+    const hasEntryRange=ranges.some(([min])=>min<2);
   const standaloneYears=[...text.matchAll(experienceYears)].map(m=>parseInt(m[1],10));
-  if(standaloneYears.some(year=>year>=2)&&!ranges.some(([min,max])=>min<2&&max>=2))return false;
+  if(!hasEntryRange&&standaloneYears.some(year=>year>=2))return false;
 
   if(fresherKeyword.test(text)||zeroExperience.test(text))return true;
 
@@ -42,6 +42,18 @@ function isValidJobUrl(value:string){
     return url.protocol==="https:"||url.protocol==="http:";
   }catch{return false;}
 }
+export function getJobCategory(job:Pick<Job,"title"|"description">){
+  const text=(job.title+" "+(job.description||"")).toLowerCase();
+  if(/\b(machine learning|artificial intelligence|llm|generative ai|data scientist)\b/.test(text))return "ai";
+  if(/\b(android|ios|react native|flutter|mobile developer)\b/.test(text))return "mobile";
+  if(/\b(devops|cloud|sre|site reliability|infrastructure|platform engineer)\b/.test(text))return "devops";
+  if(/\b(ux|ui|designer|product design)\b/.test(text))return "design";
+  if(/\b(marketing|seo|social media|growth|content marketing)\b/.test(text))return "marketing";
+  if(/\b(analytics|analyst|business intelligence|database|data engineer)\b/.test(text))return "data";
+  if(/\b(software|developer|engineer|frontend|backend|full stack|fullstack|web|qa|test)\b/.test(text))return "software";
+  return "other";
+}
+
 export async function fetchRemoteJobs():Promise<Job[]>{
   const seen=new Set<string>();
   const seenUrls=new Set<string>();

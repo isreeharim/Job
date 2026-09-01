@@ -44,12 +44,14 @@ function isValidJobUrl(value:string){
 }
 export function getJobCategory(job:Pick<Job,"title"|"description">){
   const text=(job.title+" "+(job.description||"")).toLowerCase();
-  if(/\b(machine learning|artificial intelligence|llm|generative ai|data scientist)\b/.test(text))return "ai";
+  if(/\b(machine learning|artificial intelligence|llm|generative ai|ai engineer|data scientist|deep learning|nlp|computer vision)\b/.test(text))return "ai";
   if(/\b(android|ios|react native|flutter|mobile developer)\b/.test(text))return "mobile";
   if(/\b(devops|cloud|sre|site reliability|infrastructure|platform engineer)\b/.test(text))return "devops";
   if(/\b(ux|ui|designer|product design)\b/.test(text))return "design";
   if(/\b(marketing|seo|social media|growth|content marketing)\b/.test(text))return "marketing";
-  if(/\b(analytics|analyst|business intelligence|database|data engineer)\b/.test(text))return "data";
+  if(/\b(analytics|analyst|business intelligence|database|data engineer|data analyst|etl)\b/.test(text))return "data";
+  if(/\b(cybersecurity|security engineer|information security|penetration tester)\b/.test(text))return "security";
+  if(/\b(product manager|product owner|project coordinator)\b/.test(text))return "product";
   if(/\b(software|developer|engineer|frontend|backend|full stack|fullstack|web|qa|test)\b/.test(text))return "software";
   return "other";
 }

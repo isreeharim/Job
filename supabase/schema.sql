@@ -39,3 +39,8 @@ begin
   return coalesce(acquired,false);
 end;
 $$;
+
+create or replace function public.release_job_refresh_lock()
+returns void language sql security definer as $$
+  update public.job_refresh_lock set locked_until = null where id = true;
+$$;

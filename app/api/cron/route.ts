@@ -1,5 +1,5 @@
 import {NextRequest,NextResponse} from "next/server";
-import {fetchRemoteJobs,getJobCategory} from "@/lib/job-sources";
+import {fetchRemoteJobs,getJobCategory,getJobFingerprint} from "@/lib/job-sources";
 import {supabaseAdmin} from "@/lib/supabase";
 import {sendTelegramDigest} from "@/lib/notify";
 
@@ -50,14 +50,32 @@ export async function GET(req:NextRequest){
     if(!jobs.length)
       return NextResponse.json({ok:true,found:0,saved:0,newJobs:0,notified:false,expiredBefore:expiryDate,checkedAt:new Date().toISOString()});
 
-    const ids=jobs.map(j=>j.id);
-    const {data:existing,error:existingError}=await supabaseAdmin.from("jobs").select("id").in("id",ids);
+    // Check the current board as well as source IDs. Different providers can
+    // publish the same role with different IDs, so use the stable Phase 1
+    // fingerprint (title + company + canonical application URL).
+    const {data:existing,error:existingError}=await supabaseAdmin
+      .from("jobs")
+      .select("id,title,company,url");
     if(existingError){await finishFailedRun(runId,"checking existing jobs",existingError);return errorResponse("checking existing jobs",existingError);}
 
     const existingIds=new Set((existing||[]).map(row=>row.id));
-    const newJobs=jobs.filter(job=>!existingIds.has(job.id));
+    const existingFingerprints=new Set((existing||[]).map(row=>getJobFingerprint({
+      title:row.title||"",company:row.company||"",url:row.url||""
+    })));
+
+    const uniqueJobs=jobs.filter(job=>{
+      const fingerprint=getJobFingerprint(job);
+      // Existing source IDs are updated so mutable details stay fresh.
+      if(existingIds.has(job.id))return true;
+      // A different source ID with the same role/company/application is a duplicate.
+      if(existingFingerprints.has(fingerprint))return false;
+      existingFingerprints.add(fingerprint);
+      return true;
+    });
+
+    const newJobs=uniqueJobs.filter(job=>!existingIds.has(job.id));
     // Preserve delivery state: update mutable job data without touching telegram_notified_at.
-    const rows=jobs.map(j=>({
+    const rows=uniqueJobs.map(j=>({
       id:j.id,title:j.title,company:j.company,location:j.location,url:j.url,
       description:j.description,source:j.source,category:getJobCategory(j),published_at:j.publishedAt||null
     }));
@@ -70,7 +88,7 @@ export async function GET(req:NextRequest){
     // Retry-safe notifications: only send current jobs that have not been marked delivered.
     const {data:pending,error:pendingError}=await supabaseAdmin
       .from("jobs").select("id,title,company,location,url,description,source,published_at")
-      .in("id",ids).is("telegram_notified_at",null).is("telegram_notification_error",null);
+      .in("id",uniqueJobs.map(job=>job.id)).is("telegram_notified_at",null).is("telegram_notification_error",null);
     if(pendingError){await finishFailedRun(runId,"loading pending notifications",pendingError);return errorResponse("loading pending notifications",pendingError);}
 
     const jobsToNotify=(pending||[]).map(row=>({
@@ -93,7 +111,7 @@ export async function GET(req:NextRequest){
 
     if(runId)await supabaseAdmin.from("job_refresh_runs").update({completed_at:new Date().toISOString(),status:notification.ok?"success":"partial",jobs_found:jobs.length,jobs_saved:rows.length,new_jobs:newJobs.length,notification_sent:notification.sentIds.length}).eq("id",runId);
     return NextResponse.json({
-      ok:true,found:jobs.length,saved:rows.length,newJobs:newJobs.length,
+      ok:true,found:jobs.length,saved:rows.length,newJobs:newJobs.length,duplicatesSkipped:jobs.length-uniqueJobs.length,
       notified:notification.ok,notificationSent:notification.sentIds.length,
       pendingNotifications:jobsToNotify.length,expiredBefore:expiryDate,checkedAt:new Date().toISOString()
     });

@@ -22,12 +22,16 @@ export async function GET(req:NextRequest){
     return NextResponse.json({error:"Supabase server credentials are not configured"},{status:500});
 
   let lockToken:string|null=null;
+  let runId:string|null=null;
   try{
     // Single-run lock prevents overlapping scheduler/manual invocations.
     const {data:lock,error:lockError}=await supabaseAdmin.rpc("try_acquire_job_refresh_lock");
     if(lockError)return errorResponse("acquiring refresh lock",lockError);
     if(!lock)return NextResponse.json({ok:true,skipped:true,reason:"refresh already running",checkedAt:new Date().toISOString()});
     lockToken=String(lock);
+    const {data:run,error:runStartError}=await supabaseAdmin.from("job_refresh_runs").insert({status:"running"}).select("id").single();
+    if(runStartError)return errorResponse("starting refresh history",runStartError);
+    runId=run.id;
 
     const jobs=await fetchRemoteJobs();
 
@@ -83,12 +87,14 @@ export async function GET(req:NextRequest){
       if(failError)return errorResponse("recording permanent notification failures",failError);
     }
 
+    if(runId)await supabaseAdmin.from("job_refresh_runs").update({completed_at:new Date().toISOString(),status:notification.ok?"success":"partial",jobs_found:jobs.length,jobs_saved:rows.length,new_jobs:newJobs.length,notification_sent:notification.sentIds.length}).eq("id",runId);
     return NextResponse.json({
       ok:true,found:jobs.length,saved:rows.length,newJobs:newJobs.length,
       notified:notification.ok,notificationSent:notification.sentIds.length,
       pendingNotifications:jobsToNotify.length,expiredBefore:expiryDate,checkedAt:new Date().toISOString()
     });
   }catch(error){
+    if(runId)await supabaseAdmin.from("job_refresh_runs").update({completed_at:new Date().toISOString(),status:"failed",error:error instanceof Error?error.message:String(error)}).eq("id",runId);
     return errorResponse("fetching job sources",error);
   }finally{
     if(lockToken){

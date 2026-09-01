@@ -20,12 +20,9 @@ export async function GET(req:NextRequest){
 
   let query=client
     .from("jobs")
-    .select("*",{count:"exact"})
-    .order("published_at",{ascending:false})
-    ;
+    .select("*",{count:"exact"});
 
   if(selectedCategory)query=query.eq("category",selectedCategory);
-  query=query.range(from,to);
 
   if(q){
     const safe=q.replace(/[,%()]/g," ").trim();
@@ -34,6 +31,8 @@ export async function GET(req:NextRequest){
 
   if(days>0)
     query=query.gte("published_at",new Date(Date.now()-days*86400000).toISOString());
+
+  query=query.order("published_at",{ascending:false}).range(from,to);
 
   const {data,error,count}=await query;
   if(error){

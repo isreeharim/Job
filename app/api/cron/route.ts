@@ -5,6 +5,10 @@ import {sendTelegramDigest} from "@/lib/notify";
 
 export const runtime="nodejs";
 
+async function finishFailedRun(runId:string|null,stage:string,error:unknown){
+  if(runId&&supabaseAdmin)await supabaseAdmin.from("job_refresh_runs").update({completed_at:new Date().toISOString(),status:"failed",error:error instanceof Error?error.message:String(error)}).eq("id",runId);
+}
+
 function errorResponse(stage:string,error:unknown,status=500){
   console.error(`Cron ${stage} failed`,error);
   const message=error instanceof Error?error.message:String(error);
@@ -41,14 +45,14 @@ export async function GET(req:NextRequest){
       .from("jobs")
       .delete()
       .or(`published_at.lt.${expiryDate},and(published_at.is.null,created_at.lt.${expiryDate})`);
-    if(cleanupError)return errorResponse("cleaning expired jobs",cleanupError);
+    if(cleanupError){await finishFailedRun(runId,"cleaning expired jobs",cleanupError);return errorResponse("cleaning expired jobs",cleanupError);}
 
     if(!jobs.length)
       return NextResponse.json({ok:true,found:0,saved:0,newJobs:0,notified:false,expiredBefore:expiryDate,checkedAt:new Date().toISOString()});
 
     const ids=jobs.map(j=>j.id);
     const {data:existing,error:existingError}=await supabaseAdmin.from("jobs").select("id").in("id",ids);
-    if(existingError)return errorResponse("checking existing jobs",existingError);
+    if(existingError){await finishFailedRun(runId,"checking existing jobs",existingError);return errorResponse("checking existing jobs",existingError);}
 
     const existingIds=new Set((existing||[]).map(row=>row.id));
     const newJobs=jobs.filter(job=>!existingIds.has(job.id));
@@ -61,13 +65,13 @@ export async function GET(req:NextRequest){
     const {error:upsertError}=await supabaseAdmin
       .from("jobs")
       .upsert(rows,{onConflict:"id",ignoreDuplicates:false});
-    if(upsertError)return errorResponse("saving jobs",upsertError);
+    if(upsertError){await finishFailedRun(runId,"saving jobs",upsertError);return errorResponse("saving jobs",upsertError);}
 
     // Retry-safe notifications: only send current jobs that have not been marked delivered.
     const {data:pending,error:pendingError}=await supabaseAdmin
       .from("jobs").select("id,title,company,location,url,description,source,published_at")
       .in("id",ids).is("telegram_notified_at",null).is("telegram_notification_error",null);
-    if(pendingError)return errorResponse("loading pending notifications",pendingError);
+    if(pendingError){await finishFailedRun(runId,"loading pending notifications",pendingError);return errorResponse("loading pending notifications",pendingError);}
 
     const jobsToNotify=(pending||[]).map(row=>({
       id:row.id,title:row.title,company:row.company,location:row.location||"",
@@ -78,13 +82,13 @@ export async function GET(req:NextRequest){
       const {error:markError}=await supabaseAdmin.from("jobs")
         .update({telegram_notified_at:new Date().toISOString(),telegram_notification_error:null})
         .in("id",notification.sentIds);
-      if(markError)return errorResponse("marking delivered notifications",markError);
+      if(markError){await finishFailedRun(runId,"marking delivered notifications",markError);return errorResponse("marking delivered notifications",markError);}
     }
     if(notification.failedIds.length){
       const {error:failError}=await supabaseAdmin.from("jobs")
         .update({telegram_notification_error:"URL too long for Telegram message"})
         .in("id",notification.failedIds);
-      if(failError)return errorResponse("recording permanent notification failures",failError);
+      if(failError){await finishFailedRun(runId,"recording permanent notification failures",failError);return errorResponse("recording permanent notification failures",failError);}
     }
 
     if(runId)await supabaseAdmin.from("job_refresh_runs").update({completed_at:new Date().toISOString(),status:notification.ok?"success":"partial",jobs_found:jobs.length,jobs_saved:rows.length,new_jobs:newJobs.length,notification_sent:notification.sentIds.length}).eq("id",runId);
@@ -94,7 +98,7 @@ export async function GET(req:NextRequest){
       pendingNotifications:jobsToNotify.length,expiredBefore:expiryDate,checkedAt:new Date().toISOString()
     });
   }catch(error){
-    if(runId)await supabaseAdmin.from("job_refresh_runs").update({completed_at:new Date().toISOString(),status:"failed",error:error instanceof Error?error.message:String(error)}).eq("id",runId);
+    await finishFailedRun(runId,"fetching job sources",error);
     return errorResponse("fetching job sources",error);
   }finally{
     if(lockToken){

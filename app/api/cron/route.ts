@@ -51,7 +51,7 @@ export async function GET(req:NextRequest){
 
     // Temporary bootstrap mode: send the whole current board when enabled.
     // Set TELEGRAM_SEND_ALL=false (or remove it) to return to new-jobs-only alerts.
-    const sendAll=process.env.TELEGRAM_SEND_ALL==="true";
+    const sendAll=false;
     const jobsToNotify=sendAll?jobs:newJobs;
     const notified=jobsToNotify.length?await sendTelegramDigest(jobsToNotify):false;
     return NextResponse.json({

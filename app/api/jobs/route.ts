@@ -11,9 +11,11 @@ export async function GET(req:NextRequest){
   const {searchParams}=new URL(req.url);
   const q=searchParams.get("q")?.trim();
   const category=searchParams.get("category");
-  const days=Number(searchParams.get("days")||0);
-  const page=Math.max(1,Number(searchParams.get("page")||1));
-  const limit=Math.min(50,Math.max(1,Number(searchParams.get("limit")||20)));
+  const parseIntParam=(value:string|null,fallback:number,min:number,max:number)=>{const n=Number(value);return Number.isFinite(n)&&Number.isInteger(n)?Math.min(max,Math.max(min,n)):fallback;};
+  const requestedDays=parseIntParam(searchParams.get("days"),0,0,30);
+  const days=([0,7,30] as number[]).includes(requestedDays)?requestedDays:0;
+  const page=parseIntParam(searchParams.get("page"),1,1,100000);
+  const limit=parseIntParam(searchParams.get("limit"),20,1,50);
   const from=(page-1)*limit;
   const to=from+limit-1;
   const selectedCategory=category&&category!=="all"?category:null;

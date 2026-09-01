@@ -33,6 +33,7 @@ export async function GET(req:NextRequest){
 
   if(days>0){
     const since=new Date(Date.now()-days*86400000).toISOString();
+    // Keep date logic as one grouped OR expression; category/search remain AND filters.
     query=query.or(`published_at.gte.${since},and(published_at.is.null,created_at.gte.${since})`);
   }
 

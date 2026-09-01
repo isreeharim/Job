@@ -25,7 +25,16 @@ jobs:
 
           echo "Refreshing job board..."
           response=$(mktemp)
-          status=$(curl --silent --show-error             --retry 3             --retry-all-errors             --retry-delay 5             --connect-timeout 15             --max-time 55             -o "$response"             -w "%{http_code}"             -H "Authorization: Bearer $CRON_SECRET"             "$CRON_URL")
+          status=$(curl --silent --show-error \
+            --retry 3 \
+            --retry-all-errors \
+            --retry-delay 5 \
+            --connect-timeout 15 \
+            --max-time 55 \
+            -o "$response" \
+            -w "%{http_code}" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$CRON_URL")
 
           cat "$response"
 

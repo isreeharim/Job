@@ -86,7 +86,7 @@ export default function Home(){
     <header className="boardHeader">
       <Link className="brand" href="/"><span className="brandMark">✈</span>RemoteFlow</Link>
       <nav className="headerNav">
-        <a href="#jobs">Explore</a>
+        <a href="#jobs">Explore</Link>
         <Link className="alertLink" href="/saved">Saved</Link><Link className="alertLink" href="/applications">Tracker</Link><Link className="alertLink" href="/analytics">Insights</Link><Link className="alertLink" href="/matches">Matches</Link><Link className="alertLink" href="/alerts">🔔 Alerts</Link><AccountButton/>
       </nav>
     </header>
@@ -153,7 +153,7 @@ export default function Home(){
           <span className="company">{job.company}</span>
           <span className="gate">{job.source}<small>{timeAgo(job.publishedAt)}</small></span>
           <span className="rowStatus"><MatchBadge job={job}/><span className={"status"+(jobIsFresh(job)?" statusFresh":"")}>{jobIsFresh(job)?"Fresh":"Open"}</span></span>
-        </a>)}
+        </Link>)}
         <div className="pagination">
           {currentPage>1&&<button className="chip" onClick={()=>{resetBoard();setCurrentPage(value=>value-1);}}>← Previous</button>}
           <span className="pageLabel">Page {currentPage}</span>

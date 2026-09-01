@@ -48,12 +48,15 @@ export async function GET(req:NextRequest){
 
     const existingIds=new Set((existing||[]).map(row=>row.id));
     const newJobs=jobs.filter(job=>!existingIds.has(job.id));
+    // Preserve delivery state: update mutable job data without touching telegram_notified_at.
     const rows=jobs.map(j=>({
       id:j.id,title:j.title,company:j.company,location:j.location,url:j.url,
       description:j.description,source:j.source,category:getJobCategory(j),published_at:j.publishedAt||null
     }));
 
-    const {error:upsertError}=await supabaseAdmin.from("jobs").upsert(rows,{onConflict:"id"});
+    const {error:upsertError}=await supabaseAdmin
+      .from("jobs")
+      .upsert(rows,{onConflict:"id",ignoreDuplicates:false});
     if(upsertError)return errorResponse("saving jobs",upsertError);
 
     // Retry-safe notifications: only send current jobs that have not been marked delivered.

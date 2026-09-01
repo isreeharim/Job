@@ -29,10 +29,10 @@ export function isFresherJob(job:Job){
   return /\b(junior|jr\.?|associate|graduate|intern|trainee)\b/i.test(title);
 }
 
-async function fetchRemotive():Promise<Job[]>{const res=await fetch("https://remotive.com/api/remote-jobs",{next:{revalidate:3600}});if(!res.ok)return[];const data=await res.json();return(data.jobs??[]).map((j:any):Job=>({id:"Remotive-"+j.id,title:j.title,company:j.company_name,location:j.candidate_required_location||"Remote",url:j.url,description:j.description||"",source:"Remotive",publishedAt:j.publication_date}));}
-async function fetchRemoteOK():Promise<Job[]>{const res=await fetch("https://remoteok.com/api",{next:{revalidate:3600},headers:{"User-Agent":"Mozilla/5.0"}});if(!res.ok)return[];const data=await res.json();return data.filter((j:any)=>j.id).map((j:any):Job=>({id:"RemoteOK-"+j.id,title:j.position,company:j.company,location:j.location||"Remote",url:j.url||`https://remoteok.com/remote-jobs/${j.id}`,description:j.description||"",source:"RemoteOK",publishedAt:j.date}));}
-async function fetchArbeitnow():Promise<Job[]>{const res=await fetch("https://www.arbeitnow.com/api/job-board-api",{next:{revalidate:3600}});if(!res.ok)return[];const data=await res.json();return(data.data??[]).filter((j:any)=>j.remote).map((j:any):Job=>({id:"Arbeitnow-"+j.slug,title:j.title,company:j.company_name,location:j.location||"Remote",url:j.url,description:j.description||"",source:"Arbeitnow",publishedAt:j.created_at?new Date(j.created_at*1000).toISOString():undefined}));}
-async function fetchJobicy():Promise<Job[]>{const res=await fetch("https://jobicy.com/api/v2/remote-jobs",{next:{revalidate:3600}});if(!res.ok)return[];const data=await res.json();return(data.jobs??[]).map((j:any):Job=>({id:"Jobicy-"+j.id,title:j.jobTitle,company:j.companyName,location:j.jobGeo||"Remote",url:j.url,description:j.jobExcerpt||j.jobDescription||"",source:"Jobicy",publishedAt:j.pubDate}));}
+async function fetchRemotive():Promise<Job[]>{const res=await fetch("https://remotive.com/api/remote-jobs",{next:{revalidate:3600}});if(!res.ok)throw new Error(`Remotive HTTP ${res.status}`);const data=await res.json();return(data.jobs??[]).map((j:any):Job=>({id:"Remotive-"+j.id,title:j.title,company:j.company_name,location:j.candidate_required_location||"Remote",url:j.url,description:j.description||"",source:"Remotive",publishedAt:j.publication_date}));}
+async function fetchRemoteOK():Promise<Job[]>{const res=await fetch("https://remoteok.com/api",{next:{revalidate:3600},headers:{"User-Agent":"Mozilla/5.0"}});if(!res.ok)throw new Error(`RemoteOK HTTP ${res.status}`);const data=await res.json();return data.filter((j:any)=>j.id).map((j:any):Job=>({id:"RemoteOK-"+j.id,title:j.position,company:j.company,location:j.location||"Remote",url:j.url||`https://remoteok.com/remote-jobs/${j.id}`,description:j.description||"",source:"RemoteOK",publishedAt:j.date}));}
+async function fetchArbeitnow():Promise<Job[]>{const res=await fetch("https://www.arbeitnow.com/api/job-board-api",{next:{revalidate:3600}});if(!res.ok)throw new Error(`Arbeitnow HTTP ${res.status}`);const data=await res.json();return(data.data??[]).filter((j:any)=>j.remote).map((j:any):Job=>({id:"Arbeitnow-"+j.slug,title:j.title,company:j.company_name,location:j.location||"Remote",url:j.url,description:j.description||"",source:"Arbeitnow",publishedAt:j.created_at?new Date(j.created_at*1000).toISOString():undefined}));}
+async function fetchJobicy():Promise<Job[]>{const res=await fetch("https://jobicy.com/api/v2/remote-jobs",{next:{revalidate:3600}});if(!res.ok)throw new Error(`Jobicy HTTP ${res.status}`);const data=await res.json();return(data.jobs??[]).map((j:any):Job=>({id:"Jobicy-"+j.id,title:j.jobTitle,company:j.companyName,location:j.jobGeo||"Remote",url:j.url,description:j.jobExcerpt||j.jobDescription||"",source:"Jobicy",publishedAt:j.pubDate}));}
 const sources=[fetchRemotive,fetchRemoteOK,fetchArbeitnow,fetchJobicy];
 function normalize(value:string){return value.toLowerCase().replace(/[^a-z0-9]/g,"");}
 function dedupeKey(j:Job){return normalize(j.title)+"|"+normalize(j.company);}
@@ -61,6 +61,10 @@ export async function fetchRemoteJobs():Promise<Job[]>{
   const seenUrls=new Set<string>();
   const jobs:Job[]=[];
   const results=await Promise.allSettled(sources.map(source=>source()));
+  const successfulSources=results.filter(result=>result.status==="fulfilled").length;
+  if(successfulSources===0)throw new Error("All job sources failed");
+  if(successfulSources<sources.length)console.warn(`${sources.length-successfulSources} job source(s) failed`);
+
   results.forEach((result,index)=>{
     if(result.status==="rejected"){console.error("Job source failed",sources[index].name,result.reason);return;}
     for(const job of result.value){

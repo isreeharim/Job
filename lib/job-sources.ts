@@ -42,6 +42,13 @@ function isValidJobUrl(value:string){
     return url.protocol==="https:"||url.protocol==="http:";
   }catch{return false;}
 }
+function normalizePublishedAt(value?:string){
+  if(!value)return undefined;
+  const date=new Date(value);
+  if(Number.isNaN(date.getTime()))return undefined;
+  if(date.getTime()>Date.now()+24*60*60*1000)return undefined;
+  return date.toISOString();
+}
 export function getJobCategory(job:Pick<Job,"title"|"description">){
   const text=(job.title+" "+(job.description||"")).toLowerCase();
   if(/\b(machine learning|artificial intelligence|llm|generative ai|ai engineer|data scientist|deep learning|nlp|computer vision)\b/.test(text))return "ai";
@@ -69,11 +76,13 @@ export async function fetchRemoteJobs():Promise<Job[]>{
     if(result.status==="rejected"){console.error("Job source failed",sources[index].name,result.reason);return;}
     for(const job of result.value){
       if(!job.title||!job.company||!isValidJobUrl(job.url)||!isFresherJob(job))continue;
+      job.publishedAt=normalizePublishedAt(job.publishedAt);
       const key=dedupeKey(job);
       const normalizedUrl=normalize(job.url);
       if(seen.has(key)||seenUrls.has(normalizedUrl))continue;
       seen.add(key);seenUrls.add(normalizedUrl);jobs.push(job);
     }
   });
-  return jobs.sort((a,b)=>new Date(b.publishedAt||0).getTime()-new Date(a.publishedAt||0).getTime());
+  const timestamp=(value?:string)=>value?new Date(value).getTime():0;
+  return jobs.sort((a,b)=>timestamp(b.publishedAt)-timestamp(a.publishedAt));
 }

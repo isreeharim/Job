@@ -60,19 +60,16 @@ export async function fetchRemoteJobs():Promise<Job[]>{
   const seen=new Set<string>();
   const seenUrls=new Set<string>();
   const jobs:Job[]=[];
-  for(const source of sources){
-    try{
-      const results=await source();
-      for(const job of results){
-        if(!job.title||!job.company||!isValidJobUrl(job.url)||!isFresherJob(job))continue;
-        const key=dedupeKey(job);
-        const normalizedUrl=normalize(job.url);
-        if(seen.has(key)||seenUrls.has(normalizedUrl))continue;
-        seen.add(key);
-        seenUrls.add(normalizedUrl);
-        jobs.push(job);
-      }
-    }catch(e){console.error("Job source failed",source.name,e)}
-  }
+  const results=await Promise.allSettled(sources.map(source=>source()));
+  results.forEach((result,index)=>{
+    if(result.status==="rejected"){console.error("Job source failed",sources[index].name,result.reason);return;}
+    for(const job of result.value){
+      if(!job.title||!job.company||!isValidJobUrl(job.url)||!isFresherJob(job))continue;
+      const key=dedupeKey(job);
+      const normalizedUrl=normalize(job.url);
+      if(seen.has(key)||seenUrls.has(normalizedUrl))continue;
+      seen.add(key);seenUrls.add(normalizedUrl);jobs.push(job);
+    }
+  });
   return jobs.sort((a,b)=>new Date(b.publishedAt||0).getTime()-new Date(a.publishedAt||0).getTime());
 }

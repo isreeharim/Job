@@ -33,7 +33,7 @@ returns boolean language plpgsql security definer as $$
 declare acquired boolean;
 begin
   update public.job_refresh_lock
-  set locked_until = now() + interval '10 minutes'
+  set locked_until = now() + interval '5 minutes'
   where id = true and (locked_until is null or locked_until < now())
   returning true into acquired;
   return coalesce(acquired,false);

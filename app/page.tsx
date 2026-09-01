@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {useEffect,useMemo,useState} from "react";
 import {AccountButton} from "@/components/AccountButton";
+import {MatchBadge} from "@/components/MatchBadge";
 
 function timeAgo(date?:string){
   if(!date)return "Recently";
@@ -86,7 +87,7 @@ export default function Home(){
       <Link className="brand" href="/"><span className="brandMark">✈</span>RemoteFlow</Link>
       <nav className="headerNav">
         <a href="#jobs">Explore</a>
-        <Link className="alertLink" href="/saved">Saved</Link><Link className="alertLink" href="/applications">Tracker</Link><Link className="alertLink" href="/analytics">Insights</Link><Link className="alertLink" href="/alerts">🔔 Alerts</Link><AccountButton/>
+        <Link className="alertLink" href="/saved">Saved</Link><Link className="alertLink" href="/applications">Tracker</Link><Link className="alertLink" href="/analytics">Insights</Link><Link className="alertLink" href="/matches">Matches</Link><Link className="alertLink" href="/alerts">🔔 Alerts</Link><AccountButton/>
       </nav>
     </header>
 
@@ -151,7 +152,7 @@ export default function Home(){
           <span className="role">{job.title}<span className="roleLoc">📍 {job.location||"Worldwide"}</span></span>
           <span className="company">{job.company}</span>
           <span className="gate">{job.source}<small>{timeAgo(job.publishedAt)}</small></span>
-          <span className={"status"+(jobIsFresh(job)?" statusFresh":"")}>{jobIsFresh(job)?"Fresh":"Open"}</span>
+          <span className="rowStatus"><MatchBadge job={job}/><span className={"status"+(jobIsFresh(job)?" statusFresh":"")}>{jobIsFresh(job)?"Fresh":"Open"}</span></span>
         </a>)}
         <div className="pagination">
           {currentPage>1&&<button className="chip" onClick={()=>{resetBoard();setCurrentPage(value=>value-1);}}>← Previous</button>}

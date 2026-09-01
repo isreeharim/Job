@@ -31,10 +31,36 @@ export function isFresherJob(job:Job){
   return /\b(junior|jr\.?|associate|graduate|intern|trainee|engineer\s*(?:i|1)|level\s*1|l1)\b/i.test(title);
 }
 
-async function fetchRemotive():Promise<Job[]>{const res=await fetch("https://remotive.com/api/remote-jobs",{next:{revalidate:3600},signal:AbortSignal.timeout(FETCH_TIMEOUT_MS)});if(!res.ok)throw new Error(`Remotive HTTP ${res.status}`);const data=await res.json();return(data.jobs??[]).map((j:any):Job=>({id:"Remotive-"+j.id,title:j.title,company:j.company_name,location:j.candidate_required_location||"Remote",url:j.url,description:j.description||"",source:"Remotive",publishedAt:j.publication_date}));}
-async function fetchRemoteOK():Promise<Job[]>{const res=await fetch("https://remoteok.com/api",{next:{revalidate:3600},headers:{"User-Agent":"Mozilla/5.0"},signal:AbortSignal.timeout(FETCH_TIMEOUT_MS)});if(!res.ok)throw new Error(`RemoteOK HTTP ${res.status}`);const data=await res.json();return data.filter((j:any)=>j.id).map((j:any):Job=>({id:"RemoteOK-"+j.id,title:j.position,company:j.company,location:j.location||"Remote",url:j.url||`https://remoteok.com/remote-jobs/${j.id}`,description:j.description||"",source:"RemoteOK",publishedAt:j.date}));}
-async function fetchArbeitnow():Promise<Job[]>{const res=await fetch("https://www.arbeitnow.com/api/job-board-api",{next:{revalidate:3600},signal:AbortSignal.timeout(FETCH_TIMEOUT_MS)});if(!res.ok)throw new Error(`Arbeitnow HTTP ${res.status}`);const data=await res.json();return(data.data??[]).filter((j:any)=>j.remote).map((j:any):Job=>({id:"Arbeitnow-"+j.slug,title:j.title,company:j.company_name,location:j.location||"Remote",url:j.url,description:j.description||"",source:"Arbeitnow",publishedAt:j.created_at?new Date(j.created_at*1000).toISOString():undefined}));}
-async function fetchJobicy():Promise<Job[]>{const res=await fetch("https://jobicy.com/api/v2/remote-jobs",{next:{revalidate:3600},signal:AbortSignal.timeout(FETCH_TIMEOUT_MS)});if(!res.ok)throw new Error(`Jobicy HTTP ${res.status}`);const data=await res.json();return(data.jobs??[]).map((j:any):Job=>({id:"Jobicy-"+j.id,title:j.jobTitle,company:j.companyName,location:j.jobGeo||"Remote",url:j.url,description:j.jobExcerpt||j.jobDescription||"",source:"Jobicy",publishedAt:j.pubDate}));}
+type SourceRecord=Record<string,unknown>;
+function records(value:unknown):SourceRecord[]{return Array.isArray(value)?value.filter((item):item is SourceRecord=>typeof item==="object"&&item!==null):[];}
+function text(value:unknown,fallback=""){return typeof value==="string"?value:fallback;}
+function numberOrString(value:unknown){return typeof value==="string"||typeof value==="number"?String(value):"";}
+function sourceJobs(data:unknown,key:string){return records((data as SourceRecord)?.[key]);}
+
+async function fetchRemotive():Promise<Job[]>{
+  const res=await fetch("https://remotive.com/api/remote-jobs",{next:{revalidate:3600},signal:AbortSignal.timeout(FETCH_TIMEOUT_MS)});
+  if(!res.ok)throw new Error(`Remotive HTTP ${res.status}`);
+  const data:unknown=await res.json();
+  return sourceJobs(data,"jobs").map(j=>({id:"Remotive-"+numberOrString(j.id),title:text(j.title),company:text(j.company_name),location:text(j.candidate_required_location,"Remote"),url:text(j.url),description:text(j.description),source:"Remotive",publishedAt:text(j.publication_date)||undefined}));
+}
+async function fetchRemoteOK():Promise<Job[]>{
+  const res=await fetch("https://remoteok.com/api",{next:{revalidate:3600},headers:{"User-Agent":"Mozilla/5.0"},signal:AbortSignal.timeout(FETCH_TIMEOUT_MS)});
+  if(!res.ok)throw new Error(`RemoteOK HTTP ${res.status}`);
+  const data:unknown=await res.json();
+  return records(data).filter(j=>j.id!==undefined&&j.id!==null).map(j=>{const id=numberOrString(j.id);return {id:"RemoteOK-"+id,title:text(j.position),company:text(j.company),location:text(j.location,"Remote"),url:text(j.url)||`https://remoteok.com/remote-jobs/${id}`,description:text(j.description),source:"RemoteOK",publishedAt:text(j.date)||undefined};});
+}
+async function fetchArbeitnow():Promise<Job[]>{
+  const res=await fetch("https://www.arbeitnow.com/api/job-board-api",{next:{revalidate:3600},signal:AbortSignal.timeout(FETCH_TIMEOUT_MS)});
+  if(!res.ok)throw new Error(`Arbeitnow HTTP ${res.status}`);
+  const data:unknown=await res.json();
+  return sourceJobs(data,"data").filter(j=>Boolean(j.remote)).map(j=>({id:"Arbeitnow-"+text(j.slug),title:text(j.title),company:text(j.company_name),location:text(j.location,"Remote"),url:text(j.url),description:text(j.description),source:"Arbeitnow",publishedAt:typeof j.created_at==="number"?new Date(j.created_at*1000).toISOString():undefined}));
+}
+async function fetchJobicy():Promise<Job[]>{
+  const res=await fetch("https://jobicy.com/api/v2/remote-jobs",{next:{revalidate:3600},signal:AbortSignal.timeout(FETCH_TIMEOUT_MS)});
+  if(!res.ok)throw new Error(`Jobicy HTTP ${res.status}`);
+  const data:unknown=await res.json();
+  return sourceJobs(data,"jobs").map(j=>({id:"Jobicy-"+numberOrString(j.id),title:text(j.jobTitle),company:text(j.companyName),location:text(j.jobGeo,"Remote"),url:text(j.url),description:text(j.jobExcerpt)||text(j.jobDescription),source:"Jobicy",publishedAt:text(j.pubDate)||undefined}));
+}
 const sources=[fetchRemotive,fetchRemoteOK,fetchArbeitnow,fetchJobicy];
 function normalize(value:string){return value.toLowerCase().replace(/[^a-z0-9]/g,"");}
 function dedupeKey(j:Job){return normalize(j.title)+"|"+normalize(j.company);}

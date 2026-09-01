@@ -68,9 +68,12 @@ export async function fetchRemoteJobs():Promise<Job[]>{
   const seenUrls=new Set<string>();
   const jobs:Job[]=[];
   const results=await Promise.allSettled(sources.map(source=>source()));
-  const successfulSources=results.filter(result=>result.status==="fulfilled").length;
+  const fulfilled=results.filter((result):result is PromiseFulfilledResult<Job[]>=>result.status==="fulfilled");
+  const successfulSources=fulfilled.length;
+  const rawJobs=fulfilled.reduce((total,result)=>total+result.value.length,0);
   if(successfulSources===0)throw new Error("All job sources failed");
   if(successfulSources<sources.length)console.warn(`${sources.length-successfulSources} job source(s) failed`);
+  if(rawJobs===0)throw new Error("All available job sources returned zero jobs");
 
   results.forEach((result,index)=>{
     if(result.status==="rejected"){console.error("Job source failed",sources[index].name,result.reason);return;}

@@ -26,7 +26,7 @@ export async function GET(req:NextRequest){
 
   if(q){
     const safe=q.replace(/[,%()]/g," ").trim();
-    if(safe)query=query.or(`title.ilike.%${safe}%,company.ilike.%${safe}%`);
+    if(safe)query=query.or(`title.ilike.%${safe}%,company.ilike.%${safe}%,description.ilike.%${safe}%,location.ilike.%${safe}%`);
   }
 
   if(days>0)

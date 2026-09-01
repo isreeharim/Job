@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {useEffect,useMemo,useState} from "react";
+import {AccountButton} from "@/components/AccountButton";
 
 function timeAgo(date?:string){
   if(!date)return "Recently";
@@ -85,7 +86,7 @@ export default function Home(){
       <Link className="brand" href="/"><span className="brandMark">✈</span>RemoteFlow</Link>
       <nav className="headerNav">
         <a href="#jobs">Explore</a>
-        <Link className="alertLink" href="/saved">Saved</Link><Link className="alertLink" href="/applications">Tracker</Link><Link className="alertLink" href="/analytics">Insights</Link><Link className="alertLink" href="/alerts">🔔 Alerts</Link>
+        <Link className="alertLink" href="/saved">Saved</Link><Link className="alertLink" href="/applications">Tracker</Link><Link className="alertLink" href="/analytics">Insights</Link><Link className="alertLink" href="/alerts">🔔 Alerts</Link><AccountButton/>
       </nav>
     </header>
 

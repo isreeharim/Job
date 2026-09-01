@@ -21,11 +21,13 @@ export async function GET(req:NextRequest){
   if(!supabaseAdmin)
     return NextResponse.json({error:"Supabase server credentials are not configured"},{status:500});
 
+  let lockAcquired=false;
   try{
     // Single-run lock prevents overlapping scheduler/manual invocations.
     const {data:lock,error:lockError}=await supabaseAdmin.rpc("try_acquire_job_refresh_lock");
     if(lockError)return errorResponse("acquiring refresh lock",lockError);
     if(!lock)return NextResponse.json({ok:true,skipped:true,reason:"refresh already running",checkedAt:new Date().toISOString()});
+    lockAcquired=true;
 
     const jobs=await fetchRemoteJobs();
 
@@ -79,5 +81,10 @@ export async function GET(req:NextRequest){
     });
   }catch(error){
     return errorResponse("fetching job sources",error);
+  }finally{
+    if(lockAcquired){
+      const {error}=await supabaseAdmin.rpc("release_job_refresh_lock");
+      if(error)console.error("Failed to release refresh lock",error);
+    }
   }
 }

@@ -63,7 +63,7 @@ return <main className="board">
 <span className="gate">{j.source}<small>{timeAgo(j.publishedAt)}</small></span>
 <span className="status">Open</span>
 </a>)}
-<div className="pagination">{currentPage>1&&<button className="chip" onClick={()=>setCurrentPage(x=>x-1)}>← Previous</button>}{hasMore&&<button className="chip chipActive" onClick={()=>setCurrentPage(x=>x+1)}>Load more →</button>}</div>
+<div className="pagination">{currentPage>1&&<button className="chip" onClick={()=>setCurrentPage(x=>x-1)}>← Previous</button>}{hasMore&&<button className="chip chipActive" onClick={()=>setCurrentPage(x=>x+1)}>Next →</button>}</div>
 </>}
 </section>
 </main>

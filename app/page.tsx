@@ -1,4 +1,4 @@
-"use client";import {useEffect,useState} from "react";
+"use client";import Link from "next/link";import {useEffect,useState} from "react";
 
 function timeAgo(date?:string){
   if(!date)return "Recently";
@@ -33,13 +33,13 @@ if(days)params.set("days",String(days));
 params.set("page",String(currentPage));
 params.set("limit","20");
 const controller=new AbortController();
-const t=setTimeout(()=>{fetch("/api/jobs?"+params.toString(),{signal:controller.signal}).then(r=>{if(!r.ok)throw new Error("Failed to load jobs");return r.json()}).then(d=>{setJobs(d.jobs||[]);setHasMore(Boolean(d.hasMore));setTotalCount(Number(d.count||0));}).catch(error=>{if(error?.name==="AbortError")return;setJobs([]);setHasMore(false);setTotalCount(0);}).finally(()=>{if(!controller.signal.aborted)setLoading(false)})},300);
+const t=setTimeout(()=>{fetch("/api/jobs?"+params.toString(),{signal:controller.signal}).then(r=>{if(!r.ok)throw new Error("Failed to load jobs");return r.json()}).then(d=>{setJobs(d.jobs||[]);setHasMore(Boolean(d.hasMore));setTotalCount(Number(d.count||0));}).catch(error=>{if(error?.name==="AbortError")return;setJobs([]);setHasMore(false);setTotalCount(0);}).finally(()=>{})},300);
 return ()=>{clearTimeout(t);controller.abort();};
 },[q,category,days,currentPage]);
-return <main className="board">
+const loading=jobs===null;\nreturn <main className="board">
 <header className="boardHeader">
-<a className="brand" href="/"><span className="brandMark">✈</span>RemoteFlow</a>
-<a className="alertLink" href="/alerts">Alerts</a>
+<Link className="brand" href="/"><span className="brandMark">✈</span>RemoteFlow</Link>
+<Link className="alertLink" href="/alerts">Alerts</Link>
 </header>
 <section className="hero">
 <p className="kicker">Departures · Remote work</p>
@@ -56,9 +56,9 @@ return <main className="board">
 <div className="typeFilters">{CATEGORIES.map(c=><button key={c.key} type="button" className={"chip"+(category===c.key?" chipActive":"")} onClick={()=>{setCategory(c.key);setCurrentPage(1)}}>{c.label}</button>)}</div>
 <select className="dateFilter" value={days} onChange={e=>{setDays(Number(e.target.value));setCurrentPage(1)}}>{RANGES.map(r=><option key={r.key} value={r.key}>{r.label}</option>)}</select>
 </div>
-{!loading&&jobs.length===0?<p className="empty">No roles match these filters right now. Try widening your search or check back soon.</p>:<>
+{!loading&&jobs!.length===0?<p className="empty">No roles match these filters right now. Try widening your search or check back soon.</p>:<>
 <div className="listHead"><span>Role</span><span>Company</span><span>Gate</span><span>Status</span></div>
-{jobs.map(j=><a href={j.url} target="_blank" rel="noreferrer" className="row" key={j.id}>
+{(jobs||[]).map(j=><a href={j.url} target="_blank" rel="noreferrer" className="row" key={j.id}>
 <span className="role">{j.title}<span className="roleLoc">{j.location||"Remote worldwide"}</span></span>
 <span className="company">{j.company}</span>
 <span className="gate">{j.source}<small>{timeAgo(j.publishedAt)}</small></span>

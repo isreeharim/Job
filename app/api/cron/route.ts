@@ -49,8 +49,7 @@ export async function GET(req:NextRequest){
     const {error:upsertError}=await supabaseAdmin.from("jobs").upsert(rows,{onConflict:"id"});
     if(upsertError)return errorResponse("saving jobs",upsertError);
 
-    // Temporary bootstrap mode: send the whole current board when enabled.
-    // Set TELEGRAM_SEND_ALL=false (or remove it) to return to new-jobs-only alerts.
+    // Production mode: notify only jobs that were not already stored.
     const sendAll=false;
     const jobsToNotify=sendAll?jobs:newJobs;
     const notified=jobsToNotify.length?await sendTelegramDigest(jobsToNotify):false;

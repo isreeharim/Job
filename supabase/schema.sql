@@ -44,3 +44,21 @@ create or replace function public.release_job_refresh_lock()
 returns void language sql security definer as $$
   update public.job_refresh_lock set locked_until = null where id = true;
 $$;
+
+-- Token-owned lock: only the execution that acquired the lock can release it.
+alter table public.job_refresh_lock add column if not exists lock_token text;
+create or replace function public.try_acquire_job_refresh_lock()
+returns text language plpgsql security definer as $$
+declare token text := gen_random_uuid()::text;
+begin
+  update public.job_refresh_lock set locked_until=now()+interval '5 minutes',lock_token=token
+  where id=true and (locked_until is null or locked_until<now());
+  if found then return token; end if;
+  return null;
+end;$$;
+create or replace function public.release_job_refresh_lock(p_token text)
+returns boolean language plpgsql security definer as $$
+begin
+  update public.job_refresh_lock set locked_until=null,lock_token=null where id=true and lock_token=p_token;
+  return found;
+end;$$;

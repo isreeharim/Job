@@ -11,7 +11,8 @@ create table if not exists public.jobs (
   category text not null default 'other',
   published_at timestamptz,
   created_at timestamptz default now(),
-  telegram_notified_at timestamptz
+  telegram_notified_at timestamptz,
+  telegram_notification_error text
 );
 alter table public.jobs enable row level security;
 drop policy if exists "Public jobs readable" on public.jobs;
@@ -50,3 +51,19 @@ begin
   return found;
 end;
 $$;
+
+alter table public.jobs add column if not exists telegram_notification_error text;
+create index if not exists jobs_notification_error_idx on public.jobs(telegram_notification_error) where telegram_notification_error is not null;
+
+create table if not exists public.job_refresh_runs (
+  id uuid primary key default gen_random_uuid(),
+  started_at timestamptz not null default now(),
+  completed_at timestamptz,
+  status text not null default 'running',
+  jobs_found integer default 0,
+  jobs_saved integer default 0,
+  new_jobs integer default 0,
+  notification_sent integer default 0,
+  error text
+);
+create index if not exists job_refresh_runs_started_idx on public.job_refresh_runs(started_at desc);

@@ -19,9 +19,11 @@ export async function sendTelegramDigest(jobs:Job[]){
       chunk.push(jobs[index++]);text+=`\n\n${line}`;
     }
     if(!chunk.length){
-      const job=jobs[index];
-      console.error("Telegram job URL too long; leaving pending",job.id);
-      return {ok:false,sentIds};
+      const job=jobs[index++];
+      // Skip only the pathological entry so it cannot block later notifications.
+      // Do not add it to sentIds: it remains visible for diagnostics/retry after data cleanup.
+      console.error("Telegram job URL too long; skipping notification",job.id);
+      continue;
     }
     try{
       const res=await fetch(`https://api.telegram.org/bot${token}/sendMessage`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({chat_id:chatId,text,disable_web_page_preview:true})});

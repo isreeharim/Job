@@ -1,33 +1,38 @@
 import {Job} from "./types";
 
 const FETCH_TIMEOUT_MS=15000;
-const seniorTitle=/\b(senior|sr\.?|staff|principal|lead|manager|director|architect|head of|vp|vice president|chief|mid[- ]level|expert|specialist)\b/i;
+
+// START ANYWHERE only keeps early-career opportunities. A title can say
+// "entry level" while the description asks for years of experience, so both
+// fields are evaluated before a job reaches the board.
+const seniorTitle=/\b(senior|sr\.?|staff|principal|lead|manager|director|architect|head of|vp|vice president|chief|mid[- ]level|expert)\b/i;
 const nonFresherRole=/\b(account executive|sales executive|sales manager|business development manager|enterprise account|solutions architect)\b/i;
 const fresherKeyword=/\b(fresher|entry[ -]?level|junior|graduate|new grad|intern(ship)?|trainee|apprentice|associate|early career|university graduate|campus|engineer\s*(?:i|1)|level\s*1|l1)\b/i;
 const zeroExperience=/\b(no experience|0\s*(?:-|to)?\s*1\s*(?:years?|yrs?)|0\+?\s*(?:years?|yrs?))\b/i;
 const experienceRange=/\b(\d{1,2})\s*(?:-|to)\s*(\d{1,2})\s*(?:years?|yrs?)\b/gi;
 const experienceYears=/\b(\d{1,2})\+?\s*(?:years?|yrs?)\b/gi;
 
-export function isFresherJob(job:Job){
-  const title=(job.title||"").replace(/<[^>]*>/g," ");
-  const text=(title+" "+(job.description||"")).replace(/<[^>]*>/g," ").replace(/\s+/g," ");
+function plainText(value:string){
+  return value.replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim();
+}
 
-  // Never accept clearly senior or non-entry-level roles.
+export function isFresherJob(job:Job){
+  const title=plainText(job.title||"");
+  const text=plainText(title+" "+(job.description||""));
+
+  // Never accept clearly senior or commercial/executive roles.
   if(seniorTitle.test(title)||nonFresherRole.test(title))return false;
 
-  // Explicit entry-level signals are preferred, but reject contradictory 2+ year requirements.
-  // Allow entry-level ranges such as 0-2 years, but reject roles whose
-  // minimum required experience is already 2+ years.
+  // Reject jobs whose minimum stated requirement is 2+ years. A 0-2 range is
+  // still acceptable because a fresher can qualify at the lower end.
   const ranges=[...text.matchAll(experienceRange)].map(m=>[parseInt(m[1],10),parseInt(m[2],10)]);
-    const hasEntryRange=ranges.some(([min])=>min<2);
+  const hasEntryRange=ranges.some(([min])=>min<2);
   const standaloneYears=[...text.matchAll(experienceYears)].map(m=>parseInt(m[1],10));
   if(!hasEntryRange&&standaloneYears.some(year=>year>=2))return false;
 
   if(fresherKeyword.test(text)||zeroExperience.test(text))return true;
 
-  // Avoid the previous loose behaviour where every role without an experience
-  // requirement was treated as a fresher job. Only allow ambiguous titles that
-  // themselves look junior/entry level.
+  // Do not treat every role with no experience requirement as entry level.
   return /\b(junior|jr\.?|associate|graduate|intern|trainee|engineer\s*(?:i|1)|level\s*1|l1)\b/i.test(title);
 }
 
@@ -62,8 +67,39 @@ async function fetchJobicy():Promise<Job[]>{
   return sourceJobs(data,"jobs").map(j=>({id:"Jobicy-"+numberOrString(j.id),title:text(j.jobTitle),company:text(j.companyName),location:text(j.jobGeo,"Remote"),url:text(j.url),description:text(j.jobExcerpt)||text(j.jobDescription),source:"Jobicy",publishedAt:text(j.pubDate)||undefined}));
 }
 const sources=[fetchRemotive,fetchRemoteOK,fetchArbeitnow,fetchJobicy];
+
 function normalize(value:string){return value.toLowerCase().replace(/[^a-z0-9]/g,"");}
-function dedupeKey(j:Job){return normalize(j.title)+"|"+normalize(j.company);}
+
+export function canonicalJobUrl(value:string){
+  try{
+    const url=new URL(value);
+    url.hash="";
+    // Tracking parameters should not turn the same application into a new job.
+    [...url.searchParams.keys()].forEach(key=>{
+      if(/^utm_/i.test(key)||/^(ref|source|campaign)$/i.test(key))url.searchParams.delete(key);
+    });
+    url.protocol=url.protocol.toLowerCase();
+    url.hostname=url.hostname.toLowerCase();
+    if(url.pathname!=="/")url.pathname=url.pathname.replace(/\/+$/,"");
+    return url.toString();
+  }catch{return value.trim();}
+}
+
+// Stable duplicate fingerprint: normalized title + company + application URL.
+export function getJobFingerprint(job:Pick<Job,"title"|"company"|"url">){
+  return [normalize(job.title||""),normalize(job.company||""),normalize(canonicalJobUrl(job.url||""))].join("|");
+}
+
+export function getLocationLabel(location?:string){
+  const value=(location||"").trim().toLowerCase();
+  if(!value||/^(remote|worldwide|global|anywhere|international)$/i.test(value)||/worldwide|global|anywhere|no restriction/.test(value))return "Worldwide";
+  if(/\bindia\b/.test(value))return "India";
+  if(/\b(usa|u\.s\.a|united states|us only|u\.s\. only)\b/.test(value))return "USA Only";
+  if(/\b(europe|european union|eu|emea)\b/.test(value))return "Europe";
+  if(/\b(apac|asia[- ]pacific|asia)\b/.test(value))return "APAC";
+  return location?.trim()||"Worldwide";
+}
+
 function isValidJobUrl(value:string){
   try{
     const url=new URL(value);
@@ -93,7 +129,6 @@ export function getJobCategory(job:Pick<Job,"title"|"description">){
 
 export async function fetchRemoteJobs():Promise<Job[]>{
   const seen=new Set<string>();
-  const seenUrls=new Set<string>();
   const jobs:Job[]=[];
   const results=await Promise.allSettled(sources.map(source=>source()));
   const fulfilled=results.filter((result):result is PromiseFulfilledResult<Job[]>=>result.status==="fulfilled");
@@ -108,10 +143,11 @@ export async function fetchRemoteJobs():Promise<Job[]>{
     for(const job of result.value){
       if(!job.title||!job.company||!isValidJobUrl(job.url)||!isFresherJob(job))continue;
       job.publishedAt=normalizePublishedAt(job.publishedAt);
-      const key=dedupeKey(job);
-      const normalizedUrl=normalize(job.url);
-      if(seen.has(key)||seenUrls.has(normalizedUrl))continue;
-      seen.add(key);seenUrls.add(normalizedUrl);jobs.push(job);
+      job.location=getLocationLabel(job.location);
+      const fingerprint=getJobFingerprint(job);
+      if(seen.has(fingerprint))continue;
+      seen.add(fingerprint);
+      jobs.push(job);
     }
   });
   if(jobs.length===0&&rawJobs>0)throw new Error("All fetched jobs were rejected by validation/fresher filters");

@@ -6,32 +6,28 @@ const TELEGRAM_MAX_TEXT=4096;
 export async function sendTelegramDigest(jobs:Job[]){
   const token=process.env.TELEGRAM_BOT_TOKEN;
   const chatId=process.env.TELEGRAM_CHAT_ID;
-  if(!token||!chatId||!jobs.length)return false;
+  const sentIds:string[]=[];
+  if(!token||!chatId||!jobs.length)return {ok:false,sentIds};
 
-  const chunks:Job[][]=[];
-  for(let i=0;i<jobs.length;i+=MAX_JOBS_PER_MESSAGE)
-    chunks.push(jobs.slice(i,i+MAX_JOBS_PER_MESSAGE));
-
-  try{
-    for(let index=0;index<chunks.length;index++){
-      const chunk=chunks[index];
-      const lines=chunk.map(j=>`• ${j.title} — ${j.company}\n${j.url}`);
-      let text=`🔔 Fresher remote jobs (${index+1}/${chunks.length})\n\n${lines.join("\n\n")}`;
-      if(text.length>TELEGRAM_MAX_TEXT)text=text.slice(0,TELEGRAM_MAX_TEXT-1);
-
+  for(let start=0;start<jobs.length;start+=MAX_JOBS_PER_MESSAGE){
+    const chunk=jobs.slice(start,start+MAX_JOBS_PER_MESSAGE);
+    const lines=chunk.map(j=>`• ${j.title} — ${j.company}\n${j.url}`);
+    let text=`🔔 Fresher remote jobs\n\n${lines.join("\n\n")}`;
+    if(text.length>TELEGRAM_MAX_TEXT)text=text.slice(0,TELEGRAM_MAX_TEXT-1);
+    try{
       const res=await fetch(`https://api.telegram.org/bot${token}/sendMessage`,{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
+        method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({chat_id:chatId,text,disable_web_page_preview:true})
       });
       if(!res.ok){
         console.error("Telegram API error",await res.text());
-        return false;
+        return {ok:false,sentIds};
       }
+      sentIds.push(...chunk.map(j=>j.id));
+    }catch(error){
+      console.error("Telegram notify failed",error);
+      return {ok:false,sentIds};
     }
-    return true;
-  }catch(error){
-    console.error("Telegram notify failed",error);
-    return false;
   }
+  return {ok:true,sentIds};
 }

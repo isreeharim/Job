@@ -49,13 +49,28 @@ export async function GET(req:NextRequest){
     const {error:upsertError}=await supabaseAdmin.from("jobs").upsert(rows,{onConflict:"id"});
     if(upsertError)return errorResponse("saving jobs",upsertError);
 
-    // Production mode: notify only jobs that were not already stored.
-    const sendAll=false;
-    const jobsToNotify=sendAll?jobs:newJobs;
-    const notified=jobsToNotify.length?await sendTelegramDigest(jobsToNotify):false;
+    // Retry-safe notifications: only send current jobs that have not been marked delivered.
+    const {data:pending,error:pendingError}=await supabaseAdmin
+      .from("jobs").select("id,title,company,location,url,description,source,published_at")
+      .in("id",ids).is("telegram_notified_at",null);
+    if(pendingError)return errorResponse("loading pending notifications",pendingError);
+
+    const jobsToNotify=(pending||[]).map(row=>({
+      id:row.id,title:row.title,company:row.company,location:row.location||"",
+      url:row.url,description:row.description||"",source:row.source,publishedAt:row.published_at||undefined
+    }));
+    const notification=jobsToNotify.length?await sendTelegramDigest(jobsToNotify):{ok:true,sentIds:[]};
+    if(notification.sentIds.length){
+      const {error:markError}=await supabaseAdmin.from("jobs")
+        .update({telegram_notified_at:new Date().toISOString()})
+        .in("id",notification.sentIds);
+      if(markError)return errorResponse("marking delivered notifications",markError);
+    }
+
     return NextResponse.json({
-      ok:true,found:jobs.length,saved:rows.length,newJobs:newJobs.length,notified,sendAll,expiredBefore:expiryDate,
-      checkedAt:new Date().toISOString()
+      ok:true,found:jobs.length,saved:rows.length,newJobs:newJobs.length,
+      notified:notification.ok,notificationSent:notification.sentIds.length,
+      pendingNotifications:jobsToNotify.length,expiredBefore:expiryDate,checkedAt:new Date().toISOString()
     });
   }catch(error){
     return errorResponse("fetching job sources",error);

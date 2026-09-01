@@ -11,6 +11,8 @@ export async function GET(req:NextRequest){
   const {searchParams}=new URL(req.url);
   const q=searchParams.get("q")?.trim();
   const category=searchParams.get("category");
+  const location=searchParams.get("location")?.trim();
+  const sort=searchParams.get("sort")==="relevance"?"relevance":"recent";
   const parseIntParam=(value:string|null,fallback:number,min:number,max:number)=>{const n=Number(value);return Number.isFinite(n)&&Number.isInteger(n)?Math.min(max,Math.max(min,n)):fallback;};
   const requestedDays=parseIntParam(searchParams.get("days"),0,0,30);
   const days=([0,7,30] as number[]).includes(requestedDays)?requestedDays:0;
@@ -27,8 +29,25 @@ export async function GET(req:NextRequest){
   if(selectedCategory)query=query.eq("category",selectedCategory);
 
   if(q){
-    const safe=q.replace(/[^a-zA-Z0-9 ]/g," ").replace(/\s+/g," ").trim().slice(0,80);
-    if(safe)query=query.or(`title.ilike.%${safe}%,company.ilike.%${safe}%,description.ilike.%${safe}%,location.ilike.%${safe}%`);
+    // Smart search: every word narrows the result, while each word can match
+    // title, company, description, or location. This makes searches such as
+    // "junior react india" useful instead of requiring an exact phrase.
+    const tokens=q
+      .replace(/[^a-zA-Z0-9 ]/g," ")
+      .replace(/\s+/g," ")
+      .trim()
+      .split(" ")
+      .filter(Boolean)
+      .slice(0,6)
+      .map(token=>token.slice(0,40));
+    for(const token of tokens){
+      query=query.or(`title.ilike.%${token}%,company.ilike.%${token}%,description.ilike.%${token}%,location.ilike.%${token}%`);
+    }
+  }
+
+  if(location&&location!=="all"){
+    const safeLocation=location.replace(/[^a-zA-Z0-9 ]/g," ").trim().slice(0,60);
+    if(safeLocation)query=query.ilike("location",`%${safeLocation}%`);
   }
 
   if(days>0){
@@ -37,6 +56,9 @@ export async function GET(req:NextRequest){
     query=query.or(`published_at.gte.${since},and(published_at.is.null,created_at.gte.${since})`);
   }
 
+  // Relevance is finalized client-side because Supabase REST cannot rank a
+  // multi-column ILIKE query without a dedicated full-text index. Recent is
+  // the stable default ordering for all board requests.
   query=query.order("published_at",{ascending:false,nullsFirst:false}).order("created_at",{ascending:false}).range(from,to);
 
   const {data,error,count}=await query;
@@ -45,15 +67,29 @@ export async function GET(req:NextRequest){
     return NextResponse.json({error:"Unable to fetch jobs",detail:error.message},{status:500});
   }
 
-  const jobs=(data||[]).map(r=>({
+  let jobs=(data||[]).map(r=>({
     id:r.id,title:r.title,company:r.company,location:r.location,url:r.url,
     description:r.description,source:r.source,publishedAt:r.published_at
   }));
 
+  if(sort==="relevance"&&q){
+    const terms=q.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean).slice(0,6);
+    const score=(job:typeof jobs[number])=>{
+      const title=(job.title||"").toLowerCase();
+      const company=(job.company||"").toLowerCase();
+      const locationText=(job.location||"").toLowerCase();
+      const description=(job.description||"").toLowerCase();
+      return terms.reduce((total,term)=>total+
+        (title.includes(term)?8:0)+(company.includes(term)?5:0)+
+        (locationText.includes(term)?3:0)+(description.includes(term)?1:0),0);
+    };
+    jobs=jobs.sort((a,b)=>score(b)-score(a));
+  }
+
 
 
   return NextResponse.json(
-    {count:count??jobs.length,returned:jobs.length,page,limit,hasMore:(count??0)>page*limit,jobs,updatedAt:new Date().toISOString(),audience:"freshers",category:category||"all"},
+    {count:count??jobs.length,returned:jobs.length,page,limit,hasMore:(count??0)>page*limit,jobs,updatedAt:new Date().toISOString(),audience:"freshers",category:category||"all",location:location||"all",sort},
     {headers:{"Cache-Control":"no-store, max-age=0"}}
   );
 }

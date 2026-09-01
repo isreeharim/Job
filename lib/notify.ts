@@ -2,6 +2,15 @@ import {Job} from "./types";
 
 const MAX_JOBS_PER_MESSAGE=10;
 const TELEGRAM_MAX_TEXT=4096;
+const HEADER="🔔 Fresher remote jobs";
+
+function entryFor(job:Job,maxLength:number){
+  const suffix="\n"+job.url;
+  const available=Math.max(0,maxLength-suffix.length);
+  const label=`• ${job.title} — ${job.company}`;
+  const safeLabel=label.length>available?label.slice(0,Math.max(1,available-1))+"…":label;
+  return safeLabel+suffix;
+}
 
 export async function sendTelegramDigest(jobs:Job[]){
   const token=process.env.TELEGRAM_BOT_TOKEN;
@@ -12,18 +21,17 @@ export async function sendTelegramDigest(jobs:Job[]){
   let index=0;
   while(index<jobs.length){
     const chunk:Job[]=[];
-    let text="🔔 Fresher remote jobs";
+    let text=HEADER;
     while(index<jobs.length&&chunk.length<MAX_JOBS_PER_MESSAGE){
-      const job=jobs[index];
-      const line=`• ${job.title} — ${job.company}\n${job.url}`;
+      const line=entryFor(jobs[index],TELEGRAM_MAX_TEXT-text.length-2);
       if(text.length+2+line.length>TELEGRAM_MAX_TEXT)break;
-      chunk.push(job);text+=`\n\n${line}`;index++;
+      chunk.push(jobs[index++]);text+=`\n\n${line}`;
     }
-    // A single pathological title/URL should not block the queue.
     if(!chunk.length){
       const job=jobs[index++];
-      const line=`• ${job.title} — ${job.company}\n${job.url}`;
-      chunk.push(job);text=(text+"\n\n"+line).slice(0,TELEGRAM_MAX_TEXT);
+      const line=entryFor(job,TELEGRAM_MAX_TEXT-HEADER.length-2);
+      text=HEADER+"\n\n"+line;
+      chunk.push(job);
     }
     try{
       const res=await fetch(`https://api.telegram.org/bot${token}/sendMessage`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({chat_id:chatId,text,disable_web_page_preview:true})});

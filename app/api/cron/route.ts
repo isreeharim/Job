@@ -1,5 +1,5 @@
 import {NextRequest,NextResponse} from "next/server";
-import {fetchRemoteJobs} from "@/lib/job-sources";
+import {fetchRemoteJobs,getJobCategory} from "@/lib/job-sources";
 import {supabaseAdmin} from "@/lib/supabase";
 import {sendTelegramDigest} from "@/lib/notify";
 
@@ -43,7 +43,7 @@ export async function GET(req:NextRequest){
     const newJobs=jobs.filter(job=>!existingIds.has(job.id));
     const rows=jobs.map(j=>({
       id:j.id,title:j.title,company:j.company,location:j.location,url:j.url,
-      description:j.description,source:j.source,published_at:j.publishedAt||null
+      description:j.description,source:j.source,category:getJobCategory(j),published_at:j.publishedAt||null
     }));
 
     const {error:upsertError}=await supabaseAdmin.from("jobs").upsert(rows,{onConflict:"id"});

@@ -1,17 +1,6 @@
 import {NextRequest,NextResponse} from "next/server";
 import {supabase,supabaseAdmin} from "@/lib/supabase";
 
-const CATEGORY_KEYWORDS:Record<string,string[]>={
-  software:["software","developer","engineer","frontend","front-end","backend","back-end","full stack","fullstack","web","qa","test"],
-  ai:["ai","machine learning","ml ","artificial intelligence","llm","data scientist"],
-  data:["data","analytics","analyst","business intelligence","bi ","database"],
-  design:["designer","design","ux","ui ","product design"],
-  mobile:["android","ios","mobile developer","react native","flutter"],
-  devops:["devops","cloud","sre","site reliability","platform engineer","infrastructure"],
-  marketing:["marketing","seo","content","social media","growth"],
-  other:[]
-};
-
 export const runtime="nodejs";
 
 export async function GET(req:NextRequest){
@@ -27,7 +16,7 @@ export async function GET(req:NextRequest){
   const limit=Math.min(50,Math.max(1,Number(searchParams.get("limit")||20)));
   const from=(page-1)*limit;
   const to=from+limit-1;
-  const categoryKeywords=category&&category!=="all"?CATEGORY_KEYWORDS[category]:undefined;
+  const selectedCategory=category&&category!=="all"?category:null;
 
   let query=client
     .from("jobs")
@@ -35,10 +24,7 @@ export async function GET(req:NextRequest){
     .order("published_at",{ascending:false})
     ;
 
-  if(categoryKeywords?.length){
-    const categoryQuery=categoryKeywords.map(k=>`title.ilike.%${k}%,description.ilike.%${k}%`).join(",");
-    query=query.or(categoryQuery);
-  }
+  if(selectedCategory)query=query.eq("category",selectedCategory);
   query=query.range(from,to);
 
   if(q){

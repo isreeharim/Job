@@ -1,7 +1,7 @@
 import {Job} from "./types";
 const seniorTitle=/\b(senior|sr\.?|staff|principal|lead|manager|director|architect|head of|vp|vice president|chief|mid[- ]level|expert|specialist)\b/i;
 const nonFresherRole=/\b(account executive|sales executive|sales manager|business development manager|enterprise account|solutions architect)\b/i;
-const fresherKeyword=/\b(fresher|entry[ -]?level|junior|graduate|new grad|intern(ship)?|trainee|apprentice|associate|early career|university graduate|campus)\b/i;
+const fresherKeyword=/\b(fresher|entry[ -]?level|junior|graduate|new grad|intern(ship)?|trainee|apprentice|associate|early career|university graduate|campus|engineer\s*(?:i|1)|level\s*1|l1)\b/i;
 const zeroExperience=/\b(no experience|0\s*(?:-|to)?\s*1\s*(?:years?|yrs?)|0\+?\s*(?:years?|yrs?))\b/i;
 const experienceRange=/\b(\d{1,2})\s*(?:-|to)\s*(\d{1,2})\s*(?:years?|yrs?)\b/gi;
 const experienceYears=/\b(\d{1,2})\+?\s*(?:years?|yrs?)\b/gi;
@@ -26,7 +26,7 @@ export function isFresherJob(job:Job){
   // Avoid the previous loose behaviour where every role without an experience
   // requirement was treated as a fresher job. Only allow ambiguous titles that
   // themselves look junior/entry level.
-  return /\b(junior|jr\.?|associate|graduate|intern|trainee)\b/i.test(title);
+  return /\b(junior|jr\.?|associate|graduate|intern|trainee|engineer\s*(?:i|1)|level\s*1|l1)\b/i.test(title);
 }
 
 async function fetchRemotive():Promise<Job[]>{const res=await fetch("https://remotive.com/api/remote-jobs",{next:{revalidate:3600}});if(!res.ok)throw new Error(`Remotive HTTP ${res.status}`);const data=await res.json();return(data.jobs??[]).map((j:any):Job=>({id:"Remotive-"+j.id,title:j.title,company:j.company_name,location:j.candidate_required_location||"Remote",url:j.url,description:j.description||"",source:"Remotive",publishedAt:j.publication_date}));}

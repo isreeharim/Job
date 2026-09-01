@@ -25,7 +25,7 @@ export async function GET(req:NextRequest){
   if(selectedCategory)query=query.eq("category",selectedCategory);
 
   if(q){
-    const safe=q.replace(/[,%()]/g," ").trim();
+    const safe=q.replace(/[^a-zA-Z0-9 ._+\-/#]/g," ").replace(/\s+/g," ").trim();
     if(safe)query=query.or(`title.ilike.%${safe}%,company.ilike.%${safe}%,description.ilike.%${safe}%,location.ilike.%${safe}%`);
   }
 

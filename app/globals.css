@@ -9,8 +9,8 @@
 }
 
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body),sans-serif}
+html{scroll-behavior:smooth;overflow-x:hidden;width:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body),sans-serif;overflow-x:hidden;width:100%}
 
 /* ── Layout shells ── */
 .board{max-width:960px;margin:auto;padding:18px 24px 90px}
@@ -419,17 +419,17 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
    RESPONSIVE — Tablet & Mobile (≤ 720px)
 ════════════════════════════════════════ */
 @media(max-width:720px){
-  .board{padding:12px 16px 80px}
-  .auth{padding:12px 16px 80px}
-  .detailPage{padding:12px 16px 60px}
+  .board{padding:12px 14px 70px;max-width:100%}
+  .auth{padding:12px 14px 70px;max-width:100%}
+  .detailPage{padding:12px 14px 60px;max-width:100%}
 
   /* Header */
   .boardHeader{
     flex-direction:column;
     align-items:stretch;
     gap:10px;
-    padding:8px 0 14px;
-    margin-bottom:16px;
+    padding:8px 0 12px;
+    margin-bottom:14px;
   }
   .headerTop{
     display:flex;
@@ -445,9 +445,10 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
   }
   .headerNav{
     width:100%;
+    display:flex;
     overflow-x:auto;
     white-space:nowrap;
-    padding-bottom:4px;
+    padding:2px 0 6px;
     -webkit-overflow-scrolling:touch;
     scrollbar-width:none;
     gap:6px;
@@ -456,93 +457,313 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
     display:none;
   }
   .alertLink{
-    padding:6px 12px;
+    padding:6px 11px;
     font-size:12px;
     flex-shrink:0;
   }
 
   /* Hero */
-  .hero{padding:28px 0 28px}
-  .heroStats{gap:10px}
-  .heroStats span{border-left:none;padding-left:0;border-bottom:1px solid var(--hairline);padding-bottom:8px;width:calc(50% - 5px)}
-
-  /* Job board */
-  .listHead{display:none}
-  .row{
-    grid-template-columns:1fr auto;
-    grid-template-areas:
-      "role status"
-      "company company"
-      "gate gate";
-    row-gap:8px;
-    padding:16px 4px;
+  .hero{
+    padding:24px 16px 26px;
+    border-radius:12px;
+    margin-bottom:20px;
   }
-  .role{grid-area:role;font-size:15px}
-  .status{grid-area:status;justify-self:end;align-self:start}
-  .company{grid-area:company;font-size:13px}
-  .gate{grid-area:gate;font-size:11px}
+  .kicker{
+    font-size:11px;
+    margin-bottom:8px;
+  }
+  .flap{
+    font-size:clamp(34px,9vw,52px);
+    line-height:.92;
+    margin-bottom:14px;
+    word-break:break-word;
+  }
+  .lede{
+    font-size:14px;
+    line-height:1.6;
+  }
+  .heroStats{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:16px;
+  }
+  .heroStats span{
+    border-left:none;
+    padding:6px 10px;
+    background:var(--panel);
+    border:1px solid var(--hairline);
+    border-radius:6px;
+    font-size:11px;
+  }
 
   /* Filters */
-  .filters{flex-direction:column;align-items:stretch;gap:10px}
-  .searchWrap{min-width:0;width:100%}
-  .typeFilters{gap:7px}
-  .chip{padding:7px 11px;font-size:11px}
-  .filterRow{flex-direction:column;align-items:stretch}
-  .dateFilter{width:100%}
+  .filters{
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    gap:10px;
+    padding:0 0 16px;
+  }
+  .searchWrap{
+    width:100%;
+    min-width:0;
+  }
+  .filterLabel{
+    margin-top:2px;
+  }
+  .typeFilters{
+    display:flex;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    gap:6px;
+    padding-bottom:6px;
+    scrollbar-width:none;
+    width:100%;
+  }
+  .typeFilters::-webkit-scrollbar{
+    display:none;
+  }
+  .chip{
+    flex-shrink:0;
+    padding:6px 12px;
+    font-size:12px;
+    white-space:nowrap;
+  }
+  .filterRow{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    width:100%;
+  }
+  .locationFilters{
+    display:flex;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    gap:6px;
+    padding-bottom:6px;
+    scrollbar-width:none;
+    width:100%;
+  }
+  .locationFilters::-webkit-scrollbar{
+    display:none;
+  }
+  .miniChip{
+    flex-shrink:0;
+    padding:6px 10px;
+    font-size:11px;
+    white-space:nowrap;
+  }
+  .dateFilter{
+    width:100%;
+    padding:10px 12px;
+  }
 
   /* Fresh section */
-  .freshSection{padding:22px 0}
-  .freshGrid{grid-template-columns:1fr 1fr}
-  .freshCard{min-height:120px}
-  .sectionTitle h2{font-size:20px}
+  .freshSection{padding:16px 0}
+  .freshGrid{
+    display:flex;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    gap:10px;
+    padding-bottom:10px;
+    scrollbar-width:none;
+  }
+  .freshGrid::-webkit-scrollbar{
+    display:none;
+  }
+  .freshGrid .spotlight-card{
+    flex-shrink:0;
+    width:240px;
+  }
+  .freshCard{
+    min-height:110px;
+    padding:14px;
+  }
 
-  /* Auth / alerts */
-  .ticket{grid-template-columns:1fr}
-  .ticketMain{padding:22px 18px}
-  .ticketStub{border-left:none;border-top:1px dashed var(--hairline);padding:20px 0}
-  .emailComing{flex-direction:column;align-items:stretch}
-  .emailMock{min-width:0;flex-direction:column}
-  .emailMock input{flex:1}
+  /* Job board rows */
+  .listHead{display:none}
+  .boardMeta{padding:20px 2px 8px}
+  .jobSpotlightRow{margin-bottom:8px}
+  .jobSpotlightRow .row{
+    padding:14px 14px;
+  }
+  .row{
+    display:grid;
+    grid-template-columns:1fr auto;
+    grid-template-areas:
+      "role rowStatus"
+      "company company"
+      "gate gate";
+    row-gap:6px;
+    column-gap:10px;
+    align-items:start;
+    padding:14px 12px;
+  }
+  .role{
+    grid-area:role;
+    font-size:15px;
+    min-width:0;
+    word-break:break-word;
+    line-height:1.3;
+  }
+  .roleLoc{
+    font-size:11px;
+    margin-top:3px;
+  }
+  .rowStatus{
+    grid-area:rowStatus;
+    display:flex;
+    flex-direction:row;
+    align-items:center;
+    gap:6px;
+    justify-self:end;
+  }
+  .status{
+    font-size:10px;
+    padding:3px 7px;
+    white-space:nowrap;
+  }
+  .company{
+    grid-area:company;
+    font-size:13px;
+  }
+  .gate{
+    grid-area:gate;
+    font-size:11px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .gate small{
+    display:inline;
+    margin-top:0;
+  }
 
   /* Job detail */
-  .jobDetail,.savedPage{margin-top:18px}
-  .detailActions{flex-direction:column}
-  .applyButton,.saveButton{text-align:center;width:100%}
-  .savedCard{flex-direction:column;align-items:flex-start}
+  .jobDetail{margin-top:14px}
+  .jobDetail h1{font-size:clamp(26px,7vw,38px);line-height:1.1}
+  .jobDetail h2{font-size:16px}
+  .detailMeta{flex-wrap:wrap;gap:8px 12px}
+  .detailActions{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    width:100%;
+  }
+  .detailActions .star-border-container{
+    width:100%;
+  }
+  .detailActions .star-border-inner{
+    width:100%;
+    padding:13px;
+  }
+  .detailActions .saveButton{
+    width:100%;
+    padding:12px;
+  }
 
-  /* Tracker */
-  .trackerHero{align-items:flex-start;flex-direction:column}
-  .trackerHero .applyButton{width:100%}
-  .trackerStats{grid-template-columns:repeat(2,1fr)}
-  .tracker{grid-template-columns:repeat(5,minmax(145px,1fr))}
-  .applicationForm{grid-template-columns:1fr}
-  .applicationForm textarea,.applicationForm>div{grid-column:auto}
-  .applicationForm>div{flex-direction:column}
-  .applicationForm>div .applyButton,.applicationForm>div .saveButton{width:100%;text-align:center}
-  .calendarToolbar{flex-direction:column;align-items:flex-start}
+  /* Account & Profile */
+  .authContainer{
+    margin:16px auto 36px;
+    padding:0;
+    width:100%;
+  }
+  .authCard, .profileCard{
+    padding:20px 16px;
+    border-radius:12px;
+  }
+  .authHeader h1{
+    font-size:26px;
+  }
+  .profileGrid{
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+  .authNavBtn{
+    font-size:12px;
+    padding:8px 4px;
+  }
 
-  /* Calendar */
-  .timelineDay{grid-template-columns:1fr}
-  .timelineDay article{grid-template-columns:1fr}
-  .timelineDay article span{grid-row:auto}
+  /* Applications Tracker */
+  .trackerHero{
+    align-items:stretch;
+    flex-direction:column;
+    gap:12px;
+  }
+  .trackerHero .star-border-container{
+    width:100%;
+  }
+  .trackerHero .star-border-inner{
+    width:100%;
+  }
+  .trackerStats{
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  .trackerStats div{
+    padding:12px 14px;
+  }
+  .tracker{
+    display:flex;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    gap:12px;
+    padding-bottom:16px;
+    scrollbar-width:auto;
+  }
+  .trackerColumn{
+    flex-shrink:0;
+    width:240px;
+  }
+  .applicationForm{
+    grid-template-columns:1fr;
+  }
+  .applicationForm textarea, .applicationForm>div{
+    grid-column:auto;
+  }
+  .applicationForm>div{
+    flex-direction:column;
+  }
+  .applicationForm>div .applyButton, .applicationForm>div .saveButton{
+    width:100%;
+    text-align:center;
+  }
+  .calendarToolbar{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:10px;
+  }
 
-  /* Analytics */
+  /* Matches */
+  .matchForm{
+    grid-template-columns:1fr;
+    padding:16px;
+  }
+  .matchForm button, .matchForm .star-border-container{
+    width:100%;
+  }
+  .matchForm .star-border-inner{
+    width:100%;
+  }
+  .matchCard{
+    align-items:flex-start;
+    flex-direction:column;
+    gap:10px;
+    padding:14px;
+  }
+  .matchCard p{
+    text-align:left;
+    margin:0;
+    max-width:100%;
+  }
+
+  /* Analytics & Intelligence */
   .analyticsStats{grid-template-columns:1fr 1fr}
   .analyticsGrid{grid-template-columns:1fr}
   .barRow{grid-template-columns:80px 1fr 24px}
-
-  /* Account */
-  .accountPage{margin-top:18px}
-  .syncRoadmap{grid-template-columns:1fr}
-
-  /* Matches */
-  .matchForm{grid-template-columns:1fr}
-  .matchForm button{grid-column:auto;width:100%}
-  .matchCard{align-items:flex-start;flex-direction:column;gap:12px}
-  .matchCard p{text-align:left;margin:0;max-width:100%}
-  .rowStatus{align-items:flex-end}
-
-  /* Intelligence */
   .intelStats{grid-template-columns:1fr 1fr}
   .intelGrid{grid-template-columns:1fr}
   .intelCallout h2{font-size:22px}
@@ -552,14 +773,14 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
    VERY SMALL — 400px and below
 ════════════════════════════════════════ */
 @media(max-width:400px){
-  .freshGrid{grid-template-columns:1fr}
+  .board{padding:10px 10px 60px}
+  .hero{padding:20px 12px 22px}
+  .flap{font-size:32px}
   .trackerStats{grid-template-columns:1fr 1fr}
-  .analyticsStats{grid-template-columns:1fr 1fr}
-  .intelStats{grid-template-columns:1fr 1fr}
   .heroStats span{width:100%}
-  .chip{padding:6px 10px;font-size:11px}
-  .matchCard>div{grid-template-columns:48px 1fr}
-  .matchScoreBig{font-size:22px}
+  .chip{padding:5px 10px;font-size:11px}
+  .matchCard>div{grid-template-columns:44px 1fr}
+  .matchScoreBig{font-size:20px}
 }
 
 /* ════════════════════════════════════════

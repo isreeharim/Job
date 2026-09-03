@@ -1,23 +1,23 @@
 "use client";
 
+import Link from "next/link";
 import {FormEvent,useState} from "react";
 import {useAuth} from "@/components/AuthProvider";
 import {AppHeader} from "@/components/AppHeader";
 
-type AuthMode="signin"|"signup"|"magiclink";
+export default function AccountPage(){
+  const{email,loading,signInWithPassword,signUpWithPassword,signOut}=useAuth();
 
-export default function Account(){
-  const{email,loading,signInWithPassword,signUpWithPassword,signInWithOtp,signOut}=useAuth();
-
-  const[mode,setMode]=useState<AuthMode>("signin");
+  const[isSignUp,setIsSignUp]=useState(false);
   const[emailInput,setEmailInput]=useState("");
   const[password,setPassword]=useState("");
   const[confirmPassword,setConfirmPassword]=useState("");
+  const[showPassword,setShowPassword]=useState(false);
   const[msg,setMsg]=useState<{text:string;isError:boolean}|null>(null);
   const[submitting,setSubmitting]=useState(false);
 
-  function switchMode(newMode:AuthMode){
-    setMode(newMode);
+  function toggleMode(toSignUp:boolean){
+    setIsSignUp(toSignUp);
     setMsg(null);
     setPassword("");
     setConfirmPassword("");
@@ -31,7 +31,7 @@ export default function Account(){
     setSubmitting(true);
     setMsg(null);
 
-    if(mode==="signin"){
+    if(!isSignUp){
       if(!password){
         setMsg({text:"Please enter your password.",isError:true});
         setSubmitting(false);
@@ -43,7 +43,7 @@ export default function Account(){
       }else{
         setMsg({text:"Signed in successfully!",isError:false});
       }
-    }else if(mode==="signup"){
+    }else{
       if(password.length<6){
         setMsg({text:"Password must be at least 6 characters.",isError:true});
         setSubmitting(false);
@@ -57,7 +57,7 @@ export default function Account(){
       const result=await signUpWithPassword(cleanEmail,password);
       if(result==="CONFIRMATION_REQUIRED"){
         setMsg({
-          text:`Account created! Check ${cleanEmail} for the confirmation link. After confirming, you can sign in with your email & password anytime.`,
+          text:`Account created! Check ${cleanEmail} for your verification email. After clicking the confirmation link, you can log in directly with your password anytime.`,
           isError:false,
         });
         setEmailInput("");
@@ -68,17 +68,6 @@ export default function Account(){
       }else{
         setMsg({text:"Account created and signed in!",isError:false});
       }
-    }else if(mode==="magiclink"){
-      const error=await signInWithOtp(cleanEmail);
-      if(error){
-        setMsg({text:error,isError:true});
-      }else{
-        setMsg({
-          text:`Check your inbox at ${cleanEmail} for your secure sign-in link!`,
-          isError:false,
-        });
-        setEmailInput("");
-      }
     }
 
     setSubmitting(false);
@@ -88,174 +77,186 @@ export default function Account(){
     <main className="detailPage">
       <AppHeader/>
 
-      <section className="accountPage">
-        <p className="eyebrow">YOUR REMOTEFLOW ID</p>
-        <h1>
-          {loading
-            ?"Loading…"
-            :email
-            ?"Account connected"
-            :mode==="signup"
-            ?"Create your account"
-            :mode==="magiclink"
-            ?"Passwordless sign-in"
-            :"Sign in to RemoteFlow"}
-        </h1>
+      <div className="authContainer">
+        {loading?(
+          <div className="authCard" style={{textAlign:"center",padding:"48px 24px"}}>
+            <p className="authHelperText">Checking authentication…</p>
+          </div>
+        ):email?(
+          <div className="profileCard">
+            <div className="profileHeader">
+              <div className="profileAvatarBig">
+                {email.slice(0,1).toUpperCase()}
+              </div>
+              <div className="profileInfo">
+                <h2>{email}</h2>
+                <span>● Cloud sync active</span>
+              </div>
+            </div>
 
-        {email?(
-          <div className="accountConnectedBox">
-            <p className="savedIntro">
-              Signed in as <b>{email}</b>. Your application tracker, saved shortlist, and alert preferences sync securely across all your devices.
+            <p style={{fontSize:13,color:"var(--ink-dim)",lineHeight:1.6,margin:"0 0 16px"}}>
+              Your saved jobs, tracker notes, and alert preferences are connected and sync automatically across all your devices.
             </p>
-            <button className="applyButton" onClick={signOut}>Sign out</button>
+
+            <div className="profileGrid">
+              <Link href="/saved" className="profileLinkCard">
+                <strong>📌 Saved Jobs</strong>
+                <span>View your shortlisted roles</span>
+              </Link>
+              <Link href="/applications" className="profileLinkCard">
+                <strong>📋 Tracker</strong>
+                <span>Manage your pipeline</span>
+              </Link>
+              <Link href="/matches" className="profileLinkCard">
+                <strong>🎯 Matches</strong>
+                <span>Personalized job feed</span>
+              </Link>
+              <Link href="/alerts" className="profileLinkCard">
+                <strong>🔔 Alerts</strong>
+                <span>Notification preferences</span>
+              </Link>
+            </div>
+
+            <button
+              type="button"
+              className="applyButton"
+              style={{width:"100%",marginTop:12,background:"transparent",color:"var(--ink)",border:"1px solid var(--hairline)"}}
+              onClick={signOut}
+            >
+              Sign out
+            </button>
           </div>
         ):(
-          <div className="accountAuthBox">
-            <div className="authTabs">
+          <div className="authCard">
+            <div className="authHeader">
+              <h1>{isSignUp?"Create an Account":"Welcome Back"}</h1>
+              <p>
+                {isSignUp
+                  ?"Sign up with email and password to track jobs anywhere."
+                  :"Sign in with your email and password to access your tracker."}
+              </p>
+            </div>
+
+            <div className="authNavPill">
               <button
                 type="button"
-                className={"authTab"+(mode==="signin"?" active":"")}
-                onClick={()=>switchMode("signin")}
+                className={"authNavBtn"+(!isSignUp?" active":"")}
+                onClick={()=>toggleMode(false)}
               >
-                Sign in with password
+                Sign In
               </button>
               <button
                 type="button"
-                className={"authTab"+(mode==="signup"?" active":"")}
-                onClick={()=>switchMode("signup")}
+                className={"authNavBtn"+(isSignUp?" active":"")}
+                onClick={()=>toggleMode(true)}
               >
-                Create account
-              </button>
-              <button
-                type="button"
-                className={"authTab"+(mode==="magiclink"?" active":"")}
-                onClick={()=>switchMode("magiclink")}
-              >
-                Magic link
+                Sign Up
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="accountForm">
-              {mode==="signin"&&(
-                <p className="authHelperText">
-                  Sign in with your email and password to access your synced pipeline.
-                </p>
-              )}
-              {mode==="signup"&&(
-                <p className="authHelperText">
-                  Create an account with a password so you can sign in directly on any device without waiting for emails.
-                </p>
-              )}
-              {mode==="magiclink"&&(
-                <p className="authHelperText">
-                  Don&apos;t want to remember a password? We&apos;ll send a one-click login link to your email.
-                </p>
+            {msg&&(
+              <div className={"authAlert "+(msg.isError?"error":"success")}>
+                {msg.text}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit}>
+              <div className="authField">
+                <label className="authLabel">Email address</label>
+                <div className="authInputWrap">
+                  <input
+                    className="authInput"
+                    type="email"
+                    required
+                    value={emailInput}
+                    onChange={e=>setEmailInput(e.target.value)}
+                    placeholder="name@example.com"
+                    autoComplete="email"
+                  />
+                </div>
+              </div>
+
+              <div className="authField">
+                <label className="authLabel">Password</label>
+                <div className="authInputWrap">
+                  <input
+                    className="authInput"
+                    type={showPassword?"text":"password"}
+                    required
+                    value={password}
+                    onChange={e=>setPassword(e.target.value)}
+                    placeholder={isSignUp?"At least 6 characters":"Enter your password"}
+                    autoComplete={isSignUp?"new-password":"current-password"}
+                  />
+                  <button
+                    type="button"
+                    className="authTogglePassword"
+                    onClick={()=>setShowPassword(!showPassword)}
+                    tabIndex={-1}
+                  >
+                    {showPassword?"Hide":"Show"}
+                  </button>
+                </div>
+              </div>
+
+              {isSignUp&&(
+                <div className="authField">
+                  <label className="authLabel">Confirm password</label>
+                  <div className="authInputWrap">
+                    <input
+                      className="authInput"
+                      type={showPassword?"text":"password"}
+                      required
+                      value={confirmPassword}
+                      onChange={e=>setConfirmPassword(e.target.value)}
+                      placeholder="Repeat your password"
+                      autoComplete="new-password"
+                    />
+                  </div>
+                </div>
               )}
 
-              <input
-                type="email"
-                required
-                value={emailInput}
-                onChange={e=>setEmailInput(e.target.value)}
-                placeholder="you@example.com"
-                autoComplete="email"
-              />
-
-              {mode!=="magiclink"&&(
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={e=>setPassword(e.target.value)}
-                  placeholder="Password (minimum 6 characters)"
-                  autoComplete={mode==="signup"?"new-password":"current-password"}
-                />
-              )}
-
-              {mode==="signup"&&(
-                <input
-                  type="password"
-                  required
-                  value={confirmPassword}
-                  onChange={e=>setConfirmPassword(e.target.value)}
-                  placeholder="Confirm password"
-                  autoComplete="new-password"
-                />
-              )}
-
-              <button className="applyButton" type="submit" disabled={submitting}>
+              <button
+                className="authSubmitBtn"
+                type="submit"
+                disabled={submitting}
+              >
                 {submitting
                   ?"Processing…"
-                  :mode==="signin"
-                  ?"Sign in"
-                  :mode==="signup"
-                  ?"Create account"
-                  :"Send magic link"}
+                  :isSignUp
+                  ?"Create Account"
+                  :"Sign In"}
               </button>
 
-              {msg&&(
-                <small style={{color:msg.isError?"#ef7d7d":"var(--teal)",fontSize:13,lineHeight:1.5}}>
-                  {msg.text}
-                </small>
-              )}
-
-              <div className="authSwitchLinks">
-                {mode==="signin"&&(
+              <div className="authFooterText">
+                {!isSignUp?(
                   <>
+                    Don&apos;t have an account?
                     <button
                       type="button"
-                      className="authSwitchLink"
-                      onClick={()=>switchMode("signup")}
+                      className="authFooterBtn"
+                      onClick={()=>toggleMode(true)}
                     >
-                      Don&apos;t have an account yet? Create account →
-                    </button>
-                    <button
-                      type="button"
-                      className="authSwitchLink"
-                      onClick={()=>switchMode("magiclink")}
-                    >
-                      Forgot password or prefer a magic link? →
+                      Sign up
                     </button>
                   </>
-                )}
-                {mode==="signup"&&(
-                  <button
-                    type="button"
-                    className="authSwitchLink"
-                    onClick={()=>switchMode("signin")}
-                  >
-                    Already have an account? Sign in →
-                  </button>
-                )}
-                {mode==="magiclink"&&(
-                  <button
-                    type="button"
-                    className="authSwitchLink"
-                    onClick={()=>switchMode("signin")}
-                  >
-                    Remember your password? Sign in with password →
-                  </button>
+                ):(
+                  <>
+                    Already have an account?
+                    <button
+                      type="button"
+                      className="authFooterBtn"
+                      onClick={()=>toggleMode(false)}
+                    >
+                      Sign in
+                    </button>
+                  </>
                 )}
               </div>
             </form>
           </div>
         )}
-
-        <div className="syncRoadmap">
-          <div>
-            ☁️<b>Cloud-ready</b>
-            <span>Instant sync powered by Supabase Auth with email & password</span>
-          </div>
-          <div>
-            🔒<b>Private</b>
-            <span>Your notes, shortlist, and milestones are secured by Row Level Security</span>
-          </div>
-          <div>
-            📱<b>Cross-device</b>
-            <span>Log in from your phone, laptop, or tablet anytime without extra friction</span>
-          </div>
-        </div>
-      </section>
+      </div>
     </main>
   );
 }

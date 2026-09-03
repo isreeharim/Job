@@ -180,7 +180,7 @@ async function fetchPlatformOpportunities():Promise<Job[]>{
       title:"Remote Customer Service & Support Specialist (Entry Level)",
       company:"Arise",
       location:"Worldwide",
-      url:"https://www.arise.com/work-from-home/",
+      url:"https://register.arise.com/",
       description:"Join the Arise Platform as an independent customer service professional. Choose your clients, set your own flexible schedule, and deliver remote customer care from home. No prior experience required; comprehensive certification provided.",
       source:"Arise",
       publishedAt:now
@@ -190,7 +190,7 @@ async function fetchPlatformOpportunities():Promise<Job[]>{
       title:"Virtual Customer Care & Inbound Sales Agent (Remote)",
       company:"NexRep",
       location:"USA Only",
-      url:"https://nexrep.com/work-from-home-jobs/",
+      url:"https://nexrep.com/agents/opportunities/customer-care-opportunities/",
       description:"NexRep connects motivated remote workers with industry-leading brands for inbound customer care and support. Flexible work hours, remote contractor onboarding, entry-level friendly with strong communication skills.",
       source:"NexRep",
       publishedAt:now
@@ -230,7 +230,7 @@ async function fetchPlatformOpportunities():Promise<Job[]>{
       title:"Remote AI Training Data Specialist & Microtask Associate",
       company:"Clickworker",
       location:"Worldwide",
-      url:"https://www.clickworker.com/clickworker-job/",
+      url:"https://workplace.clickworker.com/en/users/new",
       description:"Clickworker is a global crowd-working platform offering remote microtasks including AI model training, text creation, categorization, audio recording, and web research. Work anytime from any device.",
       source:"Clickworker",
       publishedAt:now
@@ -250,7 +250,7 @@ async function fetchPlatformOpportunities():Promise<Job[]>{
       title:"Remote Market Research & Digital Feedback Contributor",
       company:"Swagbucks",
       location:"Worldwide",
-      url:"https://www.swagbucks.com/",
+      url:"https://www.swagbucks.com/p/register",
       description:"Participate in paid remote market research, digital product evaluations, surveys, and web testing. Instant signup and flexible remote micro-earnings open worldwide.",
       source:"Swagbucks",
       publishedAt:now
@@ -270,7 +270,7 @@ async function fetchPlatformOpportunities():Promise<Job[]>{
       title:"Early Career Software Engineer & Tech Associate",
       company:"Built In",
       location:"Worldwide",
-      url:"https://builtin.com/jobs/remote",
+      url:"https://builtin.com/jobs/remote/entry-level",
       description:"Explore thousands of remote tech opportunities from innovative startups to tech scaleups on Built In. Filter specifically for entry-level, junior developer, and remote fellowship roles.",
       source:"BuiltIn",
       publishedAt:now
@@ -280,7 +280,7 @@ async function fetchPlatformOpportunities():Promise<Job[]>{
       title:"Curated Startup Candidate Network (Software / Product / Data)",
       company:"Underdog.io",
       location:"Worldwide",
-      url:"https://underdog.io/",
+      url:"https://underdog.io/candidates",
       description:"Apply once to Underdog.io to be introduced directly to top technology startups and venture-backed companies hiring remote software engineers, designers, and growth specialists.",
       source:"Underdog.io",
       publishedAt:now
@@ -290,7 +290,7 @@ async function fetchPlatformOpportunities():Promise<Job[]>{
       title:"Verified Remote Junior Developer & Tech Roles",
       company:"Jobgether",
       location:"Worldwide",
-      url:"https://jobgether.com/",
+      url:"https://jobgether.com/remote-jobs",
       description:"Jobgether curates verified 100% remote positions matching flexible work lifestyles across Europe, Americas, and APAC with direct employer application links.",
       source:"Jobgether",
       publishedAt:now
@@ -300,7 +300,7 @@ async function fetchPlatformOpportunities():Promise<Job[]>{
       title:"Junior Remote Web Developer & Solutions Associate",
       company:"GeoTargetly",
       location:"Worldwide",
-      url:"https://geotargetly.com/",
+      url:"https://geotargetly.com/contact",
       description:"GeoTargetly provides geolocation software and SaaS tools for global websites. Looking for remote web developers and technical support specialists comfortable with JavaScript, HTML, and web APIs.",
       source:"GeoTargetly",
       publishedAt:now

@@ -190,14 +190,15 @@ export default function Home(){
                 key={job.id}
                 spotlightColor="rgba(63, 168, 143, 0.1)"
                 borderHoverColor="var(--teal)"
+                className="freshSpotlightWrap"
               >
-                <Link href={"/jobs/"+encodeURIComponent(job.id)} className="freshCard">
+                <Link href={"/jobs/"+encodeURIComponent(job.id)} className="freshCardInner">
                   <span className="freshBadge">
                     <ShinyText text="NEW" speed={3} /> · {timeAgo(job.publishedAt)}
                   </span>
                   <strong>{job.title}</strong>
-                  <span>{job.company}</span>
-                  <small>{job.location||"Worldwide"} · {job.source}</small>
+                  <span className="freshCompany">{job.company}</span>
+                  <small className="freshLocation">📍 {job.location||"Worldwide"} · {job.source}</small>
                 </Link>
               </SpotlightCard>
             ))}

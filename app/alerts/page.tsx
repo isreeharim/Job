@@ -150,7 +150,7 @@ export default function Alerts(){
         </div>
 
         <div className="emailComing">
-          <div>
+          <div className="emailComingInfo">
             <p className="eyebrow">EMAIL ALERTS</p>
             <h2>Personal email delivery is next.</h2>
             <p>
@@ -158,8 +158,8 @@ export default function Alerts(){
             </p>
           </div>
           <div className="emailMock">
-            <input placeholder="you@example.com" disabled/>
-            <button disabled>Coming soon</button>
+            <input placeholder="you@example.com" disabled aria-label="Email address for alerts"/>
+            <button disabled type="button">Coming soon</button>
           </div>
         </div>
       </section>

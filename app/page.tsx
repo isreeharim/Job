@@ -5,7 +5,6 @@ import {useEffect,useMemo,useState} from "react";
 import {AppHeader} from "@/components/AppHeader";
 import {MatchBadge} from "@/components/MatchBadge";
 import {
-  Squares,
   DecryptedText,
   CountUp,
   SpotlightCard,
@@ -147,13 +146,6 @@ export default function Home(){
       <AppHeader/>
 
       <section className="hero">
-        <Squares
-          speed={0.3}
-          squareSize={48}
-          borderColor="rgba(255, 255, 255, 0.04)"
-          hoverFillColor="rgba(244, 185, 66, 0.07)"
-        />
-
         <div className="heroContent">
           <p className="kicker">Departures · Remote work</p>
           <h1 className="flap">

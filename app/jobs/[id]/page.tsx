@@ -2,6 +2,8 @@ import Link from "next/link";
 import {notFound} from "next/navigation";
 import {supabase,supabaseAdmin} from "@/lib/supabase";
 import {SaveJobButton} from "@/components/SaveJobButton";
+import {AppHeader} from "@/components/AppHeader";
+import {StarBorder,SpotlightCard} from "@/components/reactbits";
 
 export const dynamic="force-dynamic";
 
@@ -21,22 +23,13 @@ function decodeEntities(str:string):string{
 
 function cleanDescription(raw:string):string{
   if(!raw)return "No description was provided by the source.";
-  // Decode entities twice to resolve double-encoded markup (e.g. &amp;lt;div&gt;)
   let text=decodeEntities(decodeEntities(raw));
 
   text=text.replace(/<script[\s\S]*?<\/script>/gi,"");
   text=text.replace(/<style[\s\S]*?<\/style>/gi,"");
-
-  // Format list items cleanly as bullet points
   text=text.replace(/<li[^>]*>/gi,"\n• ");
-
-  // Convert block elements to clean line breaks
   text=text.replace(/<\/?(p|div|br|h[1-6]|ul|ol|table|tr|section|article)[^>]*>/gi,"\n");
-
-  // Strip remaining HTML tags
   text=text.replace(/<[^>]+>/g,"");
-
-  // Final entity decode
   text=decodeEntities(text);
 
   return text
@@ -75,14 +68,7 @@ export default async function JobPage({params}:{params:Promise<{id:string}>}){
 
   return(
     <main className="detailPage">
-      <header className="boardHeader">
-        <Link className="brand" href="/"><span className="brandMark">✈</span>RemoteFlow</Link>
-        <div className="headerNav">
-          <Link className="alertLink" href="/">Board</Link>
-          <Link className="alertLink" href="/saved">Saved</Link>
-          <Link className="alertLink" href="/applications">Tracker</Link>
-        </div>
-      </header>
+      <AppHeader/>
 
       <article className="jobDetail">
         <Link className="backLink" href="/">← Back to board</Link>
@@ -97,14 +83,29 @@ export default async function JobPage({params}:{params:Promise<{id:string}>}){
         </div>
 
         <div className="detailActions">
-          <a className="applyButton" href={job.url} target="_blank" rel="noreferrer">Apply now ↗</a>
+          <StarBorder
+            as="a"
+            href={job.url}
+            target="_blank"
+            rel="noreferrer"
+            className="detailApplyStar"
+            color="var(--amber)"
+          >
+            Apply now ↗
+          </StarBorder>
           <SaveJobButton job={saved}/>
         </div>
 
-        <section className="description">
-          <h3>About this role</h3>
-          <p>{formattedDescription}</p>
-        </section>
+        <SpotlightCard
+          className="descriptionSpotlight"
+          spotlightColor="rgba(244, 185, 66, 0.05)"
+          borderHoverColor="var(--hairline)"
+        >
+          <section className="description" style={{border:"none",padding:24}}>
+            <h3>About this role</h3>
+            <p style={{whiteSpace:"pre-wrap"}}>{formattedDescription}</p>
+          </section>
+        </SpotlightCard>
 
         <p className="sourceNote">
           Applications open on the original source ({job.source}). Always verify the employer before sharing sensitive personal information.

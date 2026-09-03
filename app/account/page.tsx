@@ -4,6 +4,7 @@ import Link from "next/link";
 import {FormEvent,useState} from "react";
 import {useAuth} from "@/components/AuthProvider";
 import {AppHeader} from "@/components/AppHeader";
+import {SpotlightCard,StarBorder} from "@/components/reactbits";
 
 export default function AccountPage(){
   const{email,loading,signInWithPassword,signUpWithPassword,signOut}=useAuth();
@@ -79,11 +80,11 @@ export default function AccountPage(){
 
       <div className="authContainer">
         {loading?(
-          <div className="authCard" style={{textAlign:"center",padding:"48px 24px"}}>
+          <SpotlightCard className="authCard" style={{textAlign:"center",padding:"48px 24px"}}>
             <p className="authHelperText">Checking authentication…</p>
-          </div>
+          </SpotlightCard>
         ):email?(
-          <div className="profileCard">
+          <SpotlightCard className="profileCard" spotlightColor="rgba(63, 168, 143, 0.08)">
             <div className="profileHeader">
               <div className="profileAvatarBig">
                 {email.slice(0,1).toUpperCase()}
@@ -125,9 +126,9 @@ export default function AccountPage(){
             >
               Sign out
             </button>
-          </div>
+          </SpotlightCard>
         ):(
-          <div className="authCard">
+          <SpotlightCard className="authCard" spotlightColor="rgba(244, 185, 66, 0.08)">
             <div className="authHeader">
               <h1>{isSignUp?"Create an Account":"Welcome Back"}</h1>
               <p>
@@ -216,17 +217,20 @@ export default function AccountPage(){
                 </div>
               )}
 
-              <button
-                className="authSubmitBtn"
+              <StarBorder
+                as="button"
                 type="submit"
                 disabled={submitting}
+                className="authSubmitStar"
+                color="var(--amber)"
+                style={{width:"100%",marginTop:8}}
               >
                 {submitting
                   ?"Processing…"
                   :isSignUp
                   ?"Create Account"
                   :"Sign In"}
-              </button>
+              </StarBorder>
 
               <div className="authFooterText">
                 {!isSignUp?(
@@ -254,7 +258,7 @@ export default function AccountPage(){
                 )}
               </div>
             </form>
-          </div>
+          </SpotlightCard>
         )}
       </div>
     </main>

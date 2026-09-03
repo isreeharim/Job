@@ -4,6 +4,13 @@ import Link from "next/link";
 import {useEffect,useMemo,useState} from "react";
 import {AppHeader} from "@/components/AppHeader";
 import {MatchBadge} from "@/components/MatchBadge";
+import {
+  Squares,
+  DecryptedText,
+  CountUp,
+  SpotlightCard,
+  ShinyText,
+} from "@/components/reactbits";
 
 function timeAgo(date?:string){
   if(!date)return "Recently";
@@ -140,16 +147,33 @@ export default function Home(){
       <AppHeader/>
 
       <section className="hero">
-        <p className="kicker">Departures · Remote work</p>
-        <h1 className="flap">Start<br/>Anywhere</h1>
-        <p className="lede">
-          Early-career remote roles from trusted job boards, checked every hour.
-          Search by skills, company, role, or location and find your next starting point.
-        </p>
-        <div className="heroStats">
-          <span><b>{totalCount===null?"…":totalCount}</b> roles indexed</span>
-          <span><b>{freshLoaded?freshCount:"…"}</b> fresh today</span>
-          <span>🌍 Worldwide discovery</span>
+        <Squares
+          speed={0.3}
+          squareSize={48}
+          borderColor="rgba(255, 255, 255, 0.04)"
+          hoverFillColor="rgba(244, 185, 66, 0.07)"
+        />
+
+        <div className="heroContent">
+          <p className="kicker">Departures · Remote work</p>
+          <h1 className="flap">
+            <DecryptedText text="Start" speed={30} />
+            <br/>
+            <DecryptedText text="Anywhere" speed={35} />
+          </h1>
+          <p className="lede">
+            Early-career remote roles from trusted job boards, checked every hour.
+            Search by skills, company, role, or location and find your next starting point.
+          </p>
+          <div className="heroStats">
+            <span>
+              <b>{totalCount===null?"…":<CountUp to={totalCount} />}</b> roles indexed
+            </span>
+            <span>
+              <b>{freshLoaded?<CountUp to={freshCount} />:"…"}</b> fresh today
+            </span>
+            <span>🌍 Worldwide discovery</span>
+          </div>
         </div>
       </section>
 
@@ -170,12 +194,20 @@ export default function Home(){
           </div>
           <div className="freshGrid">
             {freshJobs.map(job=>(
-              <Link href={"/jobs/"+encodeURIComponent(job.id)} className="freshCard" key={job.id}>
-                <span className="freshBadge">NEW · {timeAgo(job.publishedAt)}</span>
-                <strong>{job.title}</strong>
-                <span>{job.company}</span>
-                <small>{job.location||"Worldwide"} · {job.source}</small>
-              </Link>
+              <SpotlightCard
+                key={job.id}
+                spotlightColor="rgba(63, 168, 143, 0.1)"
+                borderHoverColor="var(--teal)"
+              >
+                <Link href={"/jobs/"+encodeURIComponent(job.id)} className="freshCard">
+                  <span className="freshBadge">
+                    <ShinyText text="NEW" speed={3} /> · {timeAgo(job.publishedAt)}
+                  </span>
+                  <strong>{job.title}</strong>
+                  <span>{job.company}</span>
+                  <small>{job.location||"Worldwide"} · {job.source}</small>
+                </Link>
+              </SpotlightCard>
             ))}
           </div>
         </section>
@@ -288,23 +320,30 @@ export default function Home(){
           <>
             <div className="listHead"><span>Role</span><span>Company</span><span>Source</span><span>Status</span></div>
             {jobs.map(job=>(
-              <Link href={"/jobs/"+encodeURIComponent(job.id)} className="row" key={job.id}>
-                <span className="role">
-                  {job.title}
-                  <span className="roleLoc">📍 {job.location||"Worldwide"}</span>
-                </span>
-                <span className="company">{job.company}</span>
-                <span className="gate">
-                  {job.source}
-                  <small>{timeAgo(job.publishedAt)}</small>
-                </span>
-                <span className="rowStatus">
-                  <MatchBadge job={job}/>
-                  <span className={"status"+(jobIsFresh(job)?" statusFresh":"")}>
-                    {jobIsFresh(job)?"Fresh":"Open"}
+              <SpotlightCard
+                key={job.id}
+                className="jobSpotlightRow"
+                spotlightColor="rgba(244, 185, 66, 0.07)"
+                borderHoverColor="rgba(244, 185, 66, 0.4)"
+              >
+                <Link href={"/jobs/"+encodeURIComponent(job.id)} className="row">
+                  <span className="role">
+                    {job.title}
+                    <span className="roleLoc">📍 {job.location||"Worldwide"}</span>
                   </span>
-                </span>
-              </Link>
+                  <span className="company">{job.company}</span>
+                  <span className="gate">
+                    {job.source}
+                    <small>{timeAgo(job.publishedAt)}</small>
+                  </span>
+                  <span className="rowStatus">
+                    <MatchBadge job={job}/>
+                    <span className={"status"+(jobIsFresh(job)?" statusFresh":"")}>
+                      {jobIsFresh(job)?<ShinyText text="Fresh" speed={3}/>:"Open"}
+                    </span>
+                  </span>
+                </Link>
+              </SpotlightCard>
             ))}
             <div className="pagination">
               {currentPage>1&&(

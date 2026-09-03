@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {usePathname} from "next/navigation";
 import {AccountButton} from "@/components/AccountButton";
+import {ShinyText} from "@/components/reactbits/ShinyText";
 
 const NAV_LINKS=[
   {href:"/",label:"Board"},
@@ -20,7 +21,8 @@ export function AppHeader(){
     <header className="boardHeader">
       <div className="headerTop">
         <Link className="brand" href="/">
-          <span className="brandMark">✈</span>RemoteFlow
+          <span className="brandMark">✈</span>
+          <ShinyText text="RemoteFlow" speed={4} />
         </Link>
         <div className="headerMobileAccount">
           <AccountButton/>

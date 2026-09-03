@@ -4,6 +4,7 @@ import Link from "next/link";
 import {FormEvent,useEffect,useMemo,useState} from "react";
 import {currentUser,loadCloudApps,saveCloudApps} from "@/lib/cloud";
 import {AppHeader} from "@/components/AppHeader";
+import {SpotlightCard,CountUp,StarBorder,ShinyText} from "@/components/reactbits";
 
 type Status="Saved"|"Applied"|"Interview"|"Offer"|"Rejected";
 type App={
@@ -123,41 +124,49 @@ export default function ApplicationsPage(){
       <section className="savedPage">
         <div className="trackerHero">
           <div>
-            <p className="eyebrow">JOB HUNT COMMAND CENTER</p>
+            <p className="eyebrow">
+              <ShinyText text="JOB HUNT COMMAND CENTER" speed={4} />
+            </p>
             <h1>Applications</h1>
             <p className="savedIntro">
               {cloud?"Your pipeline is synced to your account.":"Your pipeline is saved on this device."}
             </p>
           </div>
-          <button className="applyButton" onClick={()=>setShow(!show)}>
+          <StarBorder
+            as="button"
+            color="var(--amber)"
+            onClick={()=>setShow(!show)}
+          >
             {show?"Close form":"+ Add application"}
-          </button>
+          </StarBorder>
         </div>
 
         <div className="trackerStats">
-          <div><b>{stats.total}</b><span>Total</span></div>
-          <div><b>{stats.active}</b><span>Active</span></div>
-          <div><b>{stats.interviews}</b><span>Interviews</span></div>
-          <div><b>{stats.offers}</b><span>Offers</span></div>
+          <div><b><CountUp to={stats.total}/></b><span>Total</span></div>
+          <div><b><CountUp to={stats.active}/></b><span>Active</span></div>
+          <div><b><CountUp to={stats.interviews}/></b><span>Interviews</span></div>
+          <div><b><CountUp to={stats.offers}/></b><span>Offers</span></div>
         </div>
 
         {show&&(
-          <form className="applicationForm calendarForm" onSubmit={add}>
-            <input name="title" placeholder="Job title *" required autoFocus/>
-            <input name="company" placeholder="Company *" required/>
-            <input name="url" placeholder="Application URL" type="url"/>
-            <select name="status">
-              {STATUSES.map(s=><option key={s}>{s}</option>)}
-            </select>
-            <input name="date" type="date" defaultValue={today} title="Application date"/>
-            <input name="nextAction" placeholder="Next action (e.g. Follow up)"/>
-            <input name="nextActionDate" type="date" title="Next action deadline"/>
-            <textarea name="notes" placeholder="Notes (salary, interviewer names, impressions…)"/>
-            <div>
-              <button className="applyButton" type="submit">Save application</button>
-              <button className="saveButton" type="button" onClick={()=>setShow(false)}>Cancel</button>
-            </div>
-          </form>
+          <SpotlightCard className="trackerFormCard" spotlightColor="rgba(244, 185, 66, 0.05)">
+            <form className="applicationForm calendarForm" onSubmit={add} style={{border:"none",background:"transparent",margin:0,padding:22}}>
+              <input name="title" placeholder="Job title *" required autoFocus/>
+              <input name="company" placeholder="Company *" required/>
+              <input name="url" placeholder="Application URL" type="url"/>
+              <select name="status">
+                {STATUSES.map(s=><option key={s}>{s}</option>)}
+              </select>
+              <input name="date" type="date" defaultValue={today} title="Application date"/>
+              <input name="nextAction" placeholder="Next action (e.g. Follow up)"/>
+              <input name="nextActionDate" type="date" title="Next action deadline"/>
+              <textarea name="notes" placeholder="Notes (salary, interviewer names, impressions…)"/>
+              <div>
+                <button className="applyButton" type="submit">Save application</button>
+                <button className="saveButton" type="button" onClick={()=>setShow(false)}>Cancel</button>
+              </div>
+            </form>
+          </SpotlightCard>
         )}
 
         <div className="calendarToolbar">
@@ -192,42 +201,49 @@ export default function ApplicationsPage(){
               <div className="trackerColumn" key={status}>
                 <h3>{status}<span>{totalInStatus}</span></h3>
                 {columnItems.map(item=>(
-                  <article className="trackerCard trackerCardFull" key={item.id}>
-                    <strong>{item.job.title}</strong>
-                    <span>{item.job.company}</span>
-                    {item.nextActionDate&&(
-                      <small className={item.nextActionDate<today?"deadline overdue":"deadline"}>
-                        {item.nextAction||"Next step"} · {item.nextActionDate}
-                        {item.nextActionDate<today?" (overdue)":""}
-                      </small>
-                    )}
-                    <select
-                      value={item.status}
-                      onChange={e=>patch(item.id,{status:e.target.value as Status})}
-                      title="Update status"
-                    >
-                      {STATUSES.map(s=><option key={s}>{s}</option>)}
-                    </select>
-                    <input
-                      className="nextDateInput"
-                      type="date"
-                      value={item.nextActionDate||""}
-                      onChange={e=>patch(item.id,{nextActionDate:e.target.value})}
-                      title="Next action deadline"
-                    />
-                    <input
-                      className="nextActionInput"
-                      value={item.nextAction||""}
-                      placeholder="Next action"
-                      onChange={e=>patch(item.id,{nextAction:e.target.value})}
-                    />
-                    <div className="cardActions">
-                      {item.job.url&&(
-                        <a href={item.job.url} target="_blank" rel="noreferrer">Open ↗</a>
+                  <SpotlightCard
+                    key={item.id}
+                    spotlightColor="rgba(244, 185, 66, 0.08)"
+                    borderHoverColor="var(--amber)"
+                    className="trackerCardSpotlight"
+                  >
+                    <article className="trackerCard trackerCardFull" style={{border:"none",background:"transparent"}}>
+                      <strong>{item.job.title}</strong>
+                      <span>{item.job.company}</span>
+                      {item.nextActionDate&&(
+                        <small className={item.nextActionDate<today?"deadline overdue":"deadline"}>
+                          {item.nextAction||"Next step"} · {item.nextActionDate}
+                          {item.nextActionDate<today?" (overdue)":""}
+                        </small>
                       )}
-                      <button type="button" onClick={()=>remove(item.id)}>Remove</button>
-                    </div>
-                  </article>
+                      <select
+                        value={item.status}
+                        onChange={e=>patch(item.id,{status:e.target.value as Status})}
+                        title="Update status"
+                      >
+                        {STATUSES.map(s=><option key={s}>{s}</option>)}
+                      </select>
+                      <input
+                        className="nextDateInput"
+                        type="date"
+                        value={item.nextActionDate||""}
+                        onChange={e=>patch(item.id,{nextActionDate:e.target.value})}
+                        title="Next action deadline"
+                      />
+                      <input
+                        className="nextActionInput"
+                        value={item.nextAction||""}
+                        placeholder="Next action"
+                        onChange={e=>patch(item.id,{nextAction:e.target.value})}
+                      />
+                      <div className="cardActions">
+                        {item.job.url&&(
+                          <a href={item.job.url} target="_blank" rel="noreferrer">Open ↗</a>
+                        )}
+                        <button type="button" onClick={()=>remove(item.id)}>Remove</button>
+                      </div>
+                    </article>
+                  </SpotlightCard>
                 ))}
               </div>
             );

@@ -1,3 +1,47 @@
-import {NextResponse} from "next/server";import {supabase,supabaseAdmin} from "@/lib/supabase";export const runtime="nodejs";
-function bucket<T extends string>(items:any[],field:string,limit=8){const map=new Map<string,number>();for(const item of items){const value=String(item[field]||"Unknown").trim()||"Unknown";map.set(value,(map.get(value)||0)+1);}return [...map.entries()].sort((a,b)=>b[1]-a[1]).slice(0,limit).map(([label,value])=>({label,value}));}
-export async function GET(){const client=supabaseAdmin||supabase;if(!client)return NextResponse.json({error:"Supabase is not configured"},{status:500});const {data,error}=await client.from("jobs").select("id,title,company,location,category,source,published_at,created_at");if(error)return NextResponse.json({error:"Unable to load analytics"},{status:500});const jobs=data||[];const now=Date.now(),day=86400000;const age=(j:any)=>{const d=new Date(j.published_at||j.created_at||0).getTime();return Number.isFinite(d)?now-d:Infinity};const fresh=jobs.filter(j=>age(j)>=0&&age(j)<day).length;const week=jobs.filter(j=>age(j)>=0&&age(j)<7*day).length;const category=bucket(jobs,"category"),companies=bucket(jobs,"company"),locations=bucket(jobs,"location"),sources=bucket(jobs,"source");const trend=[6,5,4,3,2,1,0].map(offset=>{const start=now-(offset+1)*day,end=now-offset*day;return {label:new Date(start).toLocaleDateString(undefined,{weekday:"short"}),value:jobs.filter(j=>{const t=new Date(j.published_at||j.created_at||0).getTime();return t>=start&&t<end}).length};});return NextResponse.json({totals:{jobs:jobs.length,fresh,week},category,companies,locations,sources,trend,updatedAt:new Date().toISOString()},{headers:{"Cache-Control":"no-store"}});}
+import {NextResponse} from "next/server";
+import {supabase,supabaseAdmin} from "@/lib/supabase";
+export const runtime="nodejs";
+
+type JobRow={[key:string]:unknown};
+
+function bucket(items:JobRow[],field:string,limit=8){
+  const map=new Map<string,number>();
+  for(const item of items){
+    const value=String(item[field]||"Unknown").trim()||"Unknown";
+    map.set(value,(map.get(value)||0)+1);
+  }
+  return [...map.entries()].sort((a,b)=>b[1]-a[1]).slice(0,limit).map(([label,value])=>({label,value}));
+}
+
+export async function GET(){
+  const client=supabaseAdmin||supabase;
+  if(!client)return NextResponse.json({error:"Supabase is not configured"},{status:500});
+  const {data,error}=await client.from("jobs").select("id,title,company,location,category,source,published_at,created_at");
+  if(error)return NextResponse.json({error:"Unable to load analytics"},{status:500});
+  const jobs=(data||[]) as JobRow[];
+  const now=Date.now(),day=86400000;
+  const age=(j:JobRow)=>{
+    const d=new Date(String(j.published_at||j.created_at||0)).getTime();
+    return Number.isFinite(d)?now-d:Infinity;
+  };
+  const fresh=jobs.filter(j=>age(j)>=0&&age(j)<day).length;
+  const week=jobs.filter(j=>age(j)>=0&&age(j)<7*day).length;
+  const category=bucket(jobs,"category");
+  const companies=bucket(jobs,"company");
+  const locations=bucket(jobs,"location");
+  const sources=bucket(jobs,"source");
+  const trend=[6,5,4,3,2,1,0].map(offset=>{
+    const start=now-(offset+1)*day,end=now-offset*day;
+    return {
+      label:new Date(start).toLocaleDateString(undefined,{weekday:"short"}),
+      value:jobs.filter(j=>{
+        const t=new Date(String(j.published_at||j.created_at||0)).getTime();
+        return t>=start&&t<end;
+      }).length
+    };
+  });
+  return NextResponse.json(
+    {totals:{jobs:jobs.length,fresh,week},category,companies,locations,sources,trend,updatedAt:new Date().toISOString()},
+    {headers:{"Cache-Control":"no-store"}}
+  );
+}

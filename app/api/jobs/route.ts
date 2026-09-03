@@ -86,8 +86,6 @@ export async function GET(req:NextRequest){
     jobs=jobs.sort((a,b)=>score(b)-score(a));
   }
 
-
-
   return NextResponse.json(
     {count:count??jobs.length,returned:jobs.length,page,limit,hasMore:(count??0)>page*limit,jobs,updatedAt:new Date().toISOString(),audience:"freshers",category:category||"all",location:location||"all",sort},
     {headers:{"Cache-Control":"no-store, max-age=0"}}

@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: Refresh jobs
         env:
-          CRON_URL: ${{ secrets.CRON_URL }}
+          CRON_URL: ${{ secrets.CRON_URL || 'https://job.sreeharim.site/api/cron' }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           if [ -z "$CRON_SECRET" ] || [ -z "$CRON_URL" ]; then

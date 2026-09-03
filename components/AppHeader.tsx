@@ -11,7 +11,7 @@ const NAV_LINKS=[
   {href:"/applications",label:"Tracker"},
   {href:"/matches",label:"Matches"},
   {href:"/analytics",label:"Analytics"},
-  {href:"/alerts",label:"🔔 Alerts"},
+  {href:"/alerts",label:"Alerts"},
 ];
 
 export function AppHeader(){
@@ -21,7 +21,6 @@ export function AppHeader(){
     <header className="boardHeader">
       <div className="headerTop">
         <Link className="brand" href="/">
-          <span className="brandMark">✈</span>
           <ShinyText text="RemoteFlow" speed={4} />
         </Link>
         <div className="headerMobileAccount">

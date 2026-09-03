@@ -78,9 +78,9 @@ export default async function JobPage({params}:{params:Promise<{id:string}>}){
         <h2>{job.company}</h2>
 
         <div className="detailMeta">
-          <span>📍 {job.location||"Worldwide"}</span>
-          <span>🕒 {dateLabel(job.published_at)}</span>
-          <span>↗ {job.source}</span>
+          <span>{job.location||"Worldwide"}</span>
+          <span>{dateLabel(job.published_at)}</span>
+          <span>{job.source}</span>
         </div>
 
         <div className="detailActions">

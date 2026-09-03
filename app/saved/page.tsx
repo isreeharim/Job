@@ -94,9 +94,9 @@ export default function SavedPage() {
                     </button>
                   </div>
                   <div className="savedCardMeta">
-                    <span>🏢 {job.company}</span>
-                    <span>📍 {job.location || "Worldwide"}</span>
-                    <span>↗ {job.source}</span>
+                    <span>{job.company}</span>
+                    <span>{job.location || "Worldwide"}</span>
+                    <span>{job.source}</span>
                   </div>
                   <div className="savedCardActions">
                     <Link className="savedViewLink" href={"/jobs/" + encodeURIComponent(job.id)}>

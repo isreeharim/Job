@@ -136,14 +136,14 @@ export default function Alerts(){
               </label>
 
               <button className="applyButton" type="button" onClick={persist}>
-                {saved?"✓ Preferences saved!":"Save preferences"}
+                {saved?"Preferences saved!":"Save preferences"}
               </button>
             </div>
           </div>
 
           <div className="ticketStub">
             <a className="ticketBtn" href={channelUrl} target="_blank" rel="noopener noreferrer">
-              🔔 Join Telegram Channel
+              Join Telegram Channel
             </a>
             <small>Live instant alerts</small>
           </div>

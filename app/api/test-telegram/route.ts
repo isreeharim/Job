@@ -20,7 +20,7 @@ export async function GET(req:NextRequest){
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({
         chat_id:chatId,
-        text:"🔔 RemoteFlow Telegram alerts are working!\n\nYour fresher remote job notifications are connected successfully. 🚀",
+        text:"RemoteFlow Telegram alerts are working!\n\nYour fresher remote job notifications are connected successfully.",
         disable_web_page_preview:true
       })
     });

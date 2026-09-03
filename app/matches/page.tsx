@@ -119,7 +119,7 @@ export default function Matches(){
               color="var(--amber)"
               style={{gridColumn:"1/-1",justifySelf:"start",marginTop:6}}
             >
-              {savedMsg?"✓ Preferences saved!":"Save profile & refresh matches"}
+              {savedMsg?"Preferences saved!":"Save profile & refresh matches"}
             </StarBorder>
           </form>
         </SpotlightCard>
@@ -141,7 +141,7 @@ export default function Matches(){
                   </div>
                   <div className="matchDetails">
                     <strong>{job.title}</strong>
-                    <span className="matchCompany">🏢 {job.company} · 📍 {job.location||"Worldwide"}</span>
+                    <span className="matchCompany">{job.company} · {job.location||"Worldwide"}</span>
                     <div className="matchReasons">
                       {reasons.map((r,idx)=>(
                         <span key={idx} className="matchReasonTag">{r}</span>

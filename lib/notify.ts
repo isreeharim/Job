@@ -1,5 +1,5 @@
 import {Job} from "./types";
-const MAX_JOBS_PER_MESSAGE=10, TELEGRAM_MAX_TEXT=4096, TELEGRAM_TIMEOUT_MS=15000, HEADER="🔔 Fresher remote jobs";
+const MAX_JOBS_PER_MESSAGE=10, TELEGRAM_MAX_TEXT=4096, TELEGRAM_TIMEOUT_MS=15000, HEADER="Fresher remote jobs";
 function entryFor(job:Job,maxLength:number){
   const url=job.url;
   if(url.length>maxLength-8)return null;

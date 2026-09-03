@@ -37,15 +37,15 @@ type Job={
 
 const CATEGORIES=[
   {key:"all",label:"All"},
-  {key:"software",label:"💻 Software"},
-  {key:"ai",label:"🤖 AI / ML"},
-  {key:"data",label:"📊 Data"},
-  {key:"design",label:"🎨 Design"},
-  {key:"mobile",label:"📱 Mobile"},
-  {key:"devops",label:"☁️ DevOps"},
-  {key:"marketing",label:"📈 Marketing"},
-  {key:"security",label:"🔒 Security"},
-  {key:"product",label:"📦 Product"},
+  {key:"software",label:"Software"},
+  {key:"ai",label:"AI / ML"},
+  {key:"data",label:"Data"},
+  {key:"design",label:"Design"},
+  {key:"mobile",label:"Mobile"},
+  {key:"devops",label:"DevOps"},
+  {key:"marketing",label:"Marketing"},
+  {key:"security",label:"Security"},
+  {key:"product",label:"Product"},
   {key:"other",label:"Other"},
 ];
 
@@ -164,7 +164,7 @@ export default function Home(){
             <span>
               <b>{freshLoaded?<CountUp to={freshCount} />:"…"}</b> fresh today
             </span>
-            <span>🌍 Worldwide discovery</span>
+            <span>Worldwide discovery</span>
           </div>
         </div>
       </section>
@@ -198,7 +198,7 @@ export default function Home(){
                   </span>
                   <strong>{job.title}</strong>
                   <span className="freshCompany">{job.company}</span>
-                  <small className="freshLocation">📍 {job.location||"Worldwide"} · {job.source}</small>
+                  <small className="freshLocation">{job.location||"Worldwide"} · {job.source}</small>
                 </Link>
               </SpotlightCard>
             ))}
@@ -273,7 +273,7 @@ export default function Home(){
                     setCurrentPage(1);
                   }}
                 >
-                  {item==="all"?"📍 Any location":item}
+                  {item==="all"?"Any location":item}
                 </button>
               ))}
             </div>
@@ -322,7 +322,7 @@ export default function Home(){
                 <Link href={"/jobs/"+encodeURIComponent(job.id)} className="row">
                   <span className="role">
                     {job.title}
-                    <span className="roleLoc">📍 {job.location||"Worldwide"}</span>
+                    <span className="roleLoc">{job.location||"Worldwide"}</span>
                   </span>
                   <span className="company">{job.company}</span>
                   <span className="gate">

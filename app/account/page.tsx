@@ -101,19 +101,19 @@ export default function AccountPage(){
 
             <div className="profileGrid">
               <Link href="/saved" className="profileLinkCard">
-                <strong>📌 Saved Jobs</strong>
+                <strong>Saved Jobs</strong>
                 <span>View your shortlisted roles</span>
               </Link>
               <Link href="/applications" className="profileLinkCard">
-                <strong>📋 Tracker</strong>
+                <strong>Tracker</strong>
                 <span>Manage your pipeline</span>
               </Link>
               <Link href="/matches" className="profileLinkCard">
-                <strong>🎯 Matches</strong>
+                <strong>Matches</strong>
                 <span>Personalized job feed</span>
               </Link>
               <Link href="/alerts" className="profileLinkCard">
-                <strong>🔔 Alerts</strong>
+                <strong>Alerts</strong>
                 <span>Notification preferences</span>
               </Link>
             </div>

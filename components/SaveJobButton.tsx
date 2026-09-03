@@ -1,1 +1,47 @@
-"use client";import {useEffect,useState} from "react";import {currentUser,loadCloudSaved,toggleCloudSaved,CloudJob} from "@/lib/cloud";type Job=CloudJob;const KEY="remoteflow-saved-jobs";export function SaveJobButton({job}:{job:Job}){const[saved,setSaved]=useState(false);const[cloud,setCloud]=useState(false);useEffect(()=>{(async()=>{const u=await currentUser();setCloud(!!u);if(u){const jobs=await loadCloudSaved();setSaved((jobs||[]).some(j=>j.id===job.id));}else try{setSaved(JSON.parse(localStorage.getItem(KEY)||"[]").some((j:Job)=>j.id===job.id));}catch{}})();},[job.id]);async function toggle(){if(cloud){const result=await toggleCloudSaved(job);if(result!==null)setSaved(result);return;}try{const current:Job[]=JSON.parse(localStorage.getItem(KEY)||"[]");const next=saved?current.filter(j=>j.id!==job.id):[job,...current];localStorage.setItem(KEY,JSON.stringify(next));setSaved(!saved);}catch{}}return <button className={"saveButton"+(saved?" saved":"")} onClick={toggle}>{saved?"♥ Saved":"♡ Save job"}</button>}
+"use client";
+
+import { useEffect, useState } from "react";
+import { currentUser, loadCloudSaved, toggleCloudSaved, CloudJob } from "@/lib/cloud";
+
+type Job = CloudJob;
+const KEY = "remoteflow-saved-jobs";
+
+export function SaveJobButton({ job }: { job: Job }) {
+  const [saved, setSaved] = useState(false);
+  const [cloud, setCloud] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const u = await currentUser();
+      setCloud(!!u);
+      if (u) {
+        const jobs = await loadCloudSaved();
+        setSaved((jobs || []).some(j => j.id === job.id));
+      } else {
+        try {
+          setSaved(JSON.parse(localStorage.getItem(KEY) || "[]").some((j: Job) => j.id === job.id));
+        } catch {}
+      }
+    })();
+  }, [job.id]);
+
+  async function toggle() {
+    if (cloud) {
+      const result = await toggleCloudSaved(job);
+      if (result !== null) setSaved(result);
+      return;
+    }
+    try {
+      const current: Job[] = JSON.parse(localStorage.getItem(KEY) || "[]");
+      const next = saved ? current.filter(j => j.id !== job.id) : [job, ...current];
+      localStorage.setItem(KEY, JSON.stringify(next));
+      setSaved(!saved);
+    } catch {}
+  }
+
+  return (
+    <button className={"saveButton" + (saved ? " saved" : "")} onClick={toggle}>
+      {saved ? "Saved" : "Save job"}
+    </button>
+  );
+}

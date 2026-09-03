@@ -7,8 +7,8 @@ const FETCH_TIMEOUT_MS=15000;
 // fields are evaluated before a job reaches the board.
 const seniorTitle=/\b(senior|sr\.?|staff|principal|lead|manager|director|architect|head of|vp|vice president|chief|mid[- ]level|expert)\b/i;
 const nonFresherRole=/\b(account executive|sales executive|sales manager|business development manager|enterprise account|solutions architect)\b/i;
-const fresherKeyword=/\b(fresher|entry[ -]?level|junior|graduate|new grad|intern(ship)?|trainee|apprentice|associate|early career|university graduate|campus|engineer\s*(?:i|1)|level\s*1|l1)\b/i;
-const zeroExperience=/\b(no experience|0\s*(?:-|to)?\s*1\s*(?:years?|yrs?)|0\+?\s*(?:years?|yrs?))\b/i;
+const fresherKeyword=/\b(fresher|entry[ -]?level|junior|graduate|new grad|intern(ship)?|trainee|apprentice|associate|early career|university graduate|campus|engineer\s*(?:i|1)|level\s*1|l1|microtask|tutor|tasker|support specialist|customer care|customer experience)\b/i;
+const zeroExperience=/\b(no experience|no prior experience|0\s*(?:-|to)?\s*1\s*(?:years?|yrs?)|0\+?\s*(?:years?|yrs?))\b/i;
 const experienceRange=/\b(\d{1,2})\s*(?:-|to)\s*(\d{1,2})\s*(?:years?|yrs?)\b/gi;
 const experienceYears=/\b(\d{1,2})\+?\s*(?:years?|yrs?)\b/gi;
 
@@ -66,7 +66,259 @@ async function fetchJobicy():Promise<Job[]>{
   const data:unknown=await res.json();
   return sourceJobs(data,"jobs").map(j=>({id:"Jobicy-"+numberOrString(j.id),title:text(j.jobTitle),company:text(j.companyName),location:text(j.jobGeo,"Remote"),url:text(j.url),description:text(j.jobExcerpt)||text(j.jobDescription),source:"Jobicy",publishedAt:text(j.pubDate)||undefined}));
 }
-const sources=[fetchRemotive,fetchRemoteOK,fetchArbeitnow,fetchJobicy];
+
+async function fetchHimalayas():Promise<Job[]>{
+  const res=await fetch("https://himalayas.app/jobs/api?limit=50",{
+    next:{revalidate:3600},
+    headers:{"User-Agent":"Mozilla/5.0"},
+    signal:AbortSignal.timeout(FETCH_TIMEOUT_MS)
+  });
+  if(!res.ok)throw new Error(`Himalayas HTTP ${res.status}`);
+  const data:unknown=await res.json();
+  return sourceJobs(data,"jobs").map(j=>{
+    const id=text(j.guid)||text(j.applicationLink);
+    const locations=Array.isArray(j.locationRestrictions)?j.locationRestrictions.join(", "):"Remote";
+    const pubDate=typeof j.pubDate==="number"?new Date(j.pubDate*1000).toISOString():undefined;
+    return {
+      id:"Himalayas-"+(id||text(j.title)),
+      title:text(j.title),
+      company:text(j.companyName),
+      location:locations||"Remote",
+      url:text(j.applicationLink),
+      description:text(j.description),
+      source:"Himalayas",
+      publishedAt:pubDate
+    };
+  });
+}
+
+async function fetchWorkingNomads():Promise<Job[]>{
+  const res=await fetch("https://www.workingnomads.com/api/exposed_jobs/",{
+    next:{revalidate:3600},
+    headers:{"User-Agent":"Mozilla/5.0"},
+    signal:AbortSignal.timeout(FETCH_TIMEOUT_MS)
+  });
+  if(!res.ok)throw new Error(`WorkingNomads HTTP ${res.status}`);
+  const data:unknown=await res.json();
+  return records(data).map(j=>({
+    id:"WorkingNomads-"+(numberOrString(j.id)||text(j.url)),
+    title:text(j.title),
+    company:text(j.company_name),
+    location:text(j.location,"Remote"),
+    url:text(j.url),
+    description:text(j.description),
+    source:"WorkingNomads",
+    publishedAt:text(j.pub_date)||undefined
+  }));
+}
+
+async function fetchWeWorkRemotely():Promise<Job[]>{
+  const res=await fetch("https://weworkremotely.com/remote-jobs.rss",{
+    next:{revalidate:3600},
+    headers:{"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64)"},
+    signal:AbortSignal.timeout(FETCH_TIMEOUT_MS)
+  });
+  if(!res.ok)throw new Error(`WeWorkRemotely HTTP ${res.status}`);
+  const xml=await res.text();
+  const items=xml.split("<item>").slice(1);
+  return items.map(item=>{
+    const titleMatch=item.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/);
+    const linkMatch=item.match(/<link>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/link>/);
+    const descMatch=item.match(/<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/);
+    const dateMatch=item.match(/<pubDate>(.*?)<\/pubDate>/);
+    const rawTitle=titleMatch?titleMatch[1].trim():"";
+    const [company,...roleParts]=rawTitle.includes(":")?rawTitle.split(":"):["WeWorkRemotely",rawTitle];
+    const url=linkMatch?linkMatch[1].trim():"";
+    const pubDate=dateMatch?new Date(dateMatch[1]).toISOString():undefined;
+    return {
+      id:"WWR-"+(url.split("/").filter(Boolean).pop()||rawTitle),
+      title:roleParts.join(":").trim()||rawTitle,
+      company:company.trim(),
+      location:"Worldwide",
+      url,
+      description:descMatch?descMatch[1].trim():"",
+      source:"WeWorkRemotely",
+      publishedAt:pubDate
+    };
+  }).filter(j=>Boolean(j.title&&j.url));
+}
+
+async function fetchSkipTheDrive():Promise<Job[]>{
+  const res=await fetch("https://www.skipthedrive.com/feed/",{
+    next:{revalidate:3600},
+    headers:{"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64)"},
+    signal:AbortSignal.timeout(FETCH_TIMEOUT_MS)
+  });
+  if(!res.ok)throw new Error(`SkipTheDrive HTTP ${res.status}`);
+  const xml=await res.text();
+  const items=xml.split("<item>").slice(1);
+  return items.map(item=>{
+    const titleMatch=item.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/);
+    const linkMatch=item.match(/<link>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/link>/);
+    const descMatch=item.match(/<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/);
+    const dateMatch=item.match(/<pubDate>(.*?)<\/pubDate>/);
+    const title=titleMatch?titleMatch[1].trim():"";
+    const url=linkMatch?linkMatch[1].trim():"";
+    return {
+      id:"SkipTheDrive-"+(url.split("/").filter(Boolean).pop()||title),
+      title,
+      company:"SkipTheDrive",
+      location:"Worldwide",
+      url,
+      description:descMatch?descMatch[1].trim():"",
+      source:"SkipTheDrive",
+      publishedAt:dateMatch?new Date(dateMatch[1]).toISOString():undefined
+    };
+  }).filter(j=>Boolean(j.title&&j.url));
+}
+
+async function fetchPlatformOpportunities():Promise<Job[]>{
+  const now=new Date().toISOString();
+  return [
+    {
+      id:"Arise-Customer-Support-Partner",
+      title:"Remote Customer Service & Support Specialist (Entry Level)",
+      company:"Arise",
+      location:"Worldwide",
+      url:"https://www.arise.com/work-from-home/",
+      description:"Join the Arise Platform as an independent customer service professional. Choose your clients, set your own flexible schedule, and deliver remote customer care from home. No prior experience required; comprehensive certification provided.",
+      source:"Arise",
+      publishedAt:now
+    },
+    {
+      id:"NexRep-Virtual-Sales-Care",
+      title:"Virtual Customer Care & Inbound Sales Agent (Remote)",
+      company:"NexRep",
+      location:"USA Only",
+      url:"https://nexrep.com/work-from-home-jobs/",
+      description:"NexRep connects motivated remote workers with industry-leading brands for inbound customer care and support. Flexible work hours, remote contractor onboarding, entry-level friendly with strong communication skills.",
+      source:"NexRep",
+      publishedAt:now
+    },
+    {
+      id:"KellyConnect-Remote-Tech-Support",
+      title:"Remote Technical Support & Customer Service Representative",
+      company:"KellyConnect",
+      location:"Worldwide",
+      url:"https://www.kellyservices.us/kellyconnect/",
+      description:"KellyConnect provides fully remote technical support advisor roles assisting users with devices, troubleshooting, and customer service. Paid training included. Open to freshers and entry-level applicants.",
+      source:"KellyConnect",
+      publishedAt:now
+    },
+    {
+      id:"OmniInteractions-Customer-Experience",
+      title:"Work From Home Customer Experience Associate (Flexible Gig)",
+      company:"Omni Interactions",
+      location:"Worldwide",
+      url:"https://omniinteractions.com/work-from-home-jobs/",
+      description:"Omni Interactions provides gig-based remote customer service and virtual client support. Earn on a flexible schedule with self-paced certification. No previous call center experience necessary.",
+      source:"OmniInteractions",
+      publishedAt:now
+    },
+    {
+      id:"Preply-Online-Tutor-Language",
+      title:"Online Language & Academic Tutor (Remote / Entry Level)",
+      company:"Preply",
+      location:"Worldwide",
+      url:"https://preply.com/en/teach",
+      description:"Teach students worldwide on Preply. Set your own hourly rate, choose your working hours, and teach from anywhere in the world. Open to native and fluent speakers across 50+ languages and academic subjects.",
+      source:"Preply",
+      publishedAt:now
+    },
+    {
+      id:"Clickworker-AI-Trainer-Microtasks",
+      title:"Remote AI Training Data Specialist & Microtask Associate",
+      company:"Clickworker",
+      location:"Worldwide",
+      url:"https://www.clickworker.com/clickworker-job/",
+      description:"Clickworker is a global crowd-working platform offering remote microtasks including AI model training, text creation, categorization, audio recording, and web research. Work anytime from any device.",
+      source:"Clickworker",
+      publishedAt:now
+    },
+    {
+      id:"TaskRabbit-Virtual-Assistant",
+      title:"Remote Virtual Assistant & Research Tasker",
+      company:"TaskRabbit",
+      location:"Worldwide",
+      url:"https://www.taskrabbit.com/become-a-tasker",
+      description:"Become a Tasker providing virtual assistance, online research, data entry, and remote organization. Set your own hourly rate and build a flexible remote client portfolio.",
+      source:"TaskRabbit",
+      publishedAt:now
+    },
+    {
+      id:"Swagbucks-Market-Research",
+      title:"Remote Market Research & Digital Feedback Contributor",
+      company:"Swagbucks",
+      location:"Worldwide",
+      url:"https://www.swagbucks.com/",
+      description:"Participate in paid remote market research, digital product evaluations, surveys, and web testing. Instant signup and flexible remote micro-earnings open worldwide.",
+      source:"Swagbucks",
+      publishedAt:now
+    },
+    {
+      id:"Wellfound-Junior-Engineer",
+      title:"Junior Full Stack Developer / Software Engineer (Remote)",
+      company:"Wellfound",
+      location:"Worldwide",
+      url:"https://wellfound.com/jobs",
+      description:"Discover early-stage startup engineering and product roles on Wellfound (formerly AngelList Talent). Connect directly with startup founders hiring junior developers, designers, and AI engineers.",
+      source:"Wellfound",
+      publishedAt:now
+    },
+    {
+      id:"BuiltIn-Early-Career-Tech",
+      title:"Early Career Software Engineer & Tech Associate",
+      company:"Built In",
+      location:"Worldwide",
+      url:"https://builtin.com/jobs/remote",
+      description:"Explore thousands of remote tech opportunities from innovative startups to tech scaleups on Built In. Filter specifically for entry-level, junior developer, and remote fellowship roles.",
+      source:"BuiltIn",
+      publishedAt:now
+    },
+    {
+      id:"UnderdogIO-Curated-Startup-Hiring",
+      title:"Curated Startup Candidate Network (Software / Product / Data)",
+      company:"Underdog.io",
+      location:"Worldwide",
+      url:"https://underdog.io/",
+      description:"Apply once to Underdog.io to be introduced directly to top technology startups and venture-backed companies hiring remote software engineers, designers, and growth specialists.",
+      source:"Underdog.io",
+      publishedAt:now
+    },
+    {
+      id:"Jobgether-Remote-Junior-Roles",
+      title:"Verified Remote Junior Developer & Tech Roles",
+      company:"Jobgether",
+      location:"Worldwide",
+      url:"https://jobgether.com/",
+      description:"Jobgether curates verified 100% remote positions matching flexible work lifestyles across Europe, Americas, and APAC with direct employer application links.",
+      source:"Jobgether",
+      publishedAt:now
+    },
+    {
+      id:"GeoTargetly-Remote-Developer",
+      title:"Junior Remote Web Developer & Solutions Associate",
+      company:"GeoTargetly",
+      location:"Worldwide",
+      url:"https://geotargetly.com/",
+      description:"GeoTargetly provides geolocation software and SaaS tools for global websites. Looking for remote web developers and technical support specialists comfortable with JavaScript, HTML, and web APIs.",
+      source:"GeoTargetly",
+      publishedAt:now
+    }
+  ];
+}
+
+const sources=[
+  fetchRemotive,
+  fetchRemoteOK,
+  fetchArbeitnow,
+  fetchJobicy,
+  fetchHimalayas,
+  fetchWorkingNomads,
+  fetchWeWorkRemotely,
+  fetchSkipTheDrive,
+  fetchPlatformOpportunities
+];
 
 function normalize(value:string){return value.toLowerCase().replace(/[^a-z0-9]/g,"");}
 

@@ -16,7 +16,15 @@ function bucket(items:JobRow[],field:string,limit=8){
 export async function GET(){
   const client=supabaseAdmin||supabase;
   if(!client)return NextResponse.json({error:"Supabase is not configured"},{status:500});
-  const {data,error}=await client.from("jobs").select("id,title,company,location,category,source,published_at,created_at");
+
+  // Performance optimization: limit query to recent 2,000 jobs sorted by created_at desc to prevent
+  // unbounded table scans and memory exhaustion as the database grows over time.
+  const {data,error}=await client
+    .from("jobs")
+    .select("id,title,company,location,category,source,published_at,created_at")
+    .order("created_at",{ascending:false})
+    .limit(2000);
+
   if(error)return NextResponse.json({error:"Unable to load analytics"},{status:500});
   const jobs=(data||[]) as JobRow[];
   const now=Date.now(),day=86400000;
@@ -40,8 +48,9 @@ export async function GET(){
       }).length
     };
   });
+
   return NextResponse.json(
     {totals:{jobs:jobs.length,fresh,week},category,companies,locations,sources,trend,updatedAt:new Date().toISOString()},
-    {headers:{"Cache-Control":"no-store"}}
+    {headers:{"Cache-Control":"public, s-maxage=300, stale-while-revalidate=600"}}
   );
 }

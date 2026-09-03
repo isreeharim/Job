@@ -7,6 +7,9 @@ type Auth={
   email:string|null;
   loading:boolean;
   signIn:(email:string)=>Promise<string|null>;
+  signInWithOtp:(email:string)=>Promise<string|null>;
+  signInWithPassword:(email:string,password:string)=>Promise<string|null>;
+  signUpWithPassword:(email:string,password:string)=>Promise<string|null>;
   signOut:()=>Promise<void>;
 };
 
@@ -32,7 +35,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
     return()=>subscription.unsubscribe();
   },[]);
 
-  async function signIn(value:string){
+  async function signInWithOtp(value:string){
     try{
       const redirectTo=typeof window==="undefined"?undefined:window.location.origin+"/account";
       const {error}=await supabase.auth.signInWithOtp({
@@ -45,6 +48,36 @@ export function AuthProvider({children}:{children:React.ReactNode}){
     }
   }
 
+  async function signInWithPassword(email:string,password:string){
+    try{
+      const {error}=await supabase.auth.signInWithPassword({
+        email:email.trim(),
+        password,
+      });
+      return error?.message||null;
+    }catch(err:unknown){
+      return err instanceof Error?err.message:"Failed to sign in";
+    }
+  }
+
+  async function signUpWithPassword(email:string,password:string){
+    try{
+      const redirectTo=typeof window==="undefined"?undefined:window.location.origin+"/account";
+      const {data,error}=await supabase.auth.signUp({
+        email:email.trim(),
+        password,
+        options:{emailRedirectTo:redirectTo},
+      });
+      if(error)return error.message;
+      if(data.user && !data.session){
+        return "CONFIRMATION_REQUIRED";
+      }
+      return null;
+    }catch(err:unknown){
+      return err instanceof Error?err.message:"Failed to create account";
+    }
+  }
+
   async function signOut(){
     try{
       await supabase.auth.signOut();
@@ -53,7 +86,17 @@ export function AuthProvider({children}:{children:React.ReactNode}){
   }
 
   return(
-    <C.Provider value={{email,loading,signIn,signOut}}>
+    <C.Provider
+      value={{
+        email,
+        loading,
+        signIn:signInWithOtp,
+        signInWithOtp,
+        signInWithPassword,
+        signUpWithPassword,
+        signOut,
+      }}
+    >
       {children}
     </C.Provider>
   );

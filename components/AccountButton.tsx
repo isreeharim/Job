@@ -1,0 +1,1 @@
+"use client";import Link from "next/link";import {useAuth} from "@/components/AuthProvider";export function AccountButton(){const{email,loading}=useAuth();if(loading)return <span className="accountGhost">…</span>;return <Link className="accountButton" href="/account">{email?email.slice(0,1).toUpperCase():"Sign in"}</Link>}

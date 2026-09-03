@@ -1,4 +1,94 @@
-"use client";import Link from "next/link";import {useEffect,useState} from "react";
-type Item={label:string;value:number};type Data={totals:{jobs:number;fresh:number;week:number};category:Item[];companies:Item[];locations:Item[];sources:Item[];trend:Item[];updatedAt:string};
-function Bars({title,items}:{title:string;items:Item[]}){const max=Math.max(...items.map(i=>i.value),1);return <section className="analyticsCard"><h2>{title}</h2>{items.length?items.map(item=><div className="barRow" key={item.label}><span>{item.label}</span><div><i style={{width:(item.value/max*100)+"%"}}/></div><b>{item.value}</b></div>):<p className="muted">Not enough data yet.</p>}</section>}
-export default function Analytics(){const[data,setData]=useState<Data|null>(null);useEffect(()=>{fetch("/api/analytics").then(r=>r.json()).then(setData).catch(()=>setData(null));},[]);return <main className="detailPage"><header className="boardHeader"><Link className="brand" href="/"><span className="brandMark">✈</span>RemoteFlow</Link><div className="headerNav"><Link className="alertLink" href="/">Board</Link><Link className="alertLink" href="/applications">Tracker</Link></div></header><section className="savedPage"><p className="eyebrow">MARKET INTELLIGENCE</p><h1>Analytics</h1><p className="savedIntro">A live snapshot of the opportunities flowing through RemoteFlow.</p>{!data?<div className="empty"><h3>Loading the board…</h3></div>:<><div className="analyticsStats"><div><b>{data.totals.jobs}</b><span>Jobs indexed</span></div><div><b>{data.totals.fresh}</b><span>Fresh today</span></div><div><b>{data.totals.week}</b><span>Last 7 days</span></div><div><b>{data.companies.length}</b><span>Top companies</span></div></div><section className="analyticsCard trendCard"><h2>7-day arrivals</h2><div className="trend">{data.trend.map(x=>{const max=Math.max(...data.trend.map(v=>v.value),1);return <div key={x.label}><i style={{height:Math.max(5,x.value/max*100)+"%"}}/><b>{x.value}</b><span>{x.label}</span></div>})}</div></section><div className="analyticsGrid"><Bars title="Top categories" items={data.category}/><Bars title="Hiring companies" items={data.companies}/><Bars title="Locations" items={data.locations}/><Bars title="Sources" items={data.sources}/></div><p className="analyticsUpdated">Updated {new Date(data.updatedAt).toLocaleTimeString()}</p></>}</section></main>}
+"use client";
+
+import {useEffect,useState} from "react";
+import {AppHeader} from "@/components/AppHeader";
+
+type Item={label:string;value:number};
+type Data={
+  totals:{jobs:number;fresh:number;week:number};
+  category:Item[];
+  companies:Item[];
+  locations:Item[];
+  sources:Item[];
+  trend:Item[];
+  updatedAt:string;
+};
+
+function Bars({title,items}:{title:string;items:Item[]}){
+  const max=Math.max(...items.map(i=>i.value),1);
+  return(
+    <section className="analyticsCard">
+      <h2>{title}</h2>
+      {items.length?items.map(item=>(
+        <div className="barRow" key={item.label}>
+          <span>{item.label}</span>
+          <div><i style={{width:(item.value/max*100)+"%"}}/></div>
+          <b>{item.value}</b>
+        </div>
+      )):<p className="muted">Not enough data yet.</p>}
+    </section>
+  );
+}
+
+export default function Analytics(){
+  const[data,setData]=useState<Data|null>(null);
+
+  useEffect(()=>{
+    fetch("/api/analytics")
+      .then(r=>r.json())
+      .then(setData)
+      .catch(()=>setData(null));
+  },[]);
+
+  return(
+    <main className="detailPage">
+      <AppHeader/>
+
+      <section className="savedPage">
+        <p className="eyebrow">MARKET INTELLIGENCE</p>
+        <h1>Analytics</h1>
+        <p className="savedIntro">A live snapshot of early-career opportunities flowing through RemoteFlow.</p>
+
+        {!data?(
+          <div className="empty"><h3>Loading market analytics…</h3></div>
+        ):(
+          <>
+            <div className="analyticsStats">
+              <div><b>{data.totals.jobs}</b><span>Jobs indexed</span></div>
+              <div><b>{data.totals.fresh}</b><span>Fresh today</span></div>
+              <div><b>{data.totals.week}</b><span>Last 7 days</span></div>
+              <div><b>{data.companies.length}</b><span>Top employers</span></div>
+            </div>
+
+            <section className="analyticsCard trendCard">
+              <h2>7-day arrivals</h2>
+              <div className="trend">
+                {data.trend.map(x=>{
+                  const max=Math.max(...data.trend.map(v=>v.value),1);
+                  return(
+                    <div key={x.label}>
+                      <i style={{height:Math.max(5,x.value/max*100)+"%"}}/>
+                      <b>{x.value}</b>
+                      <span>{x.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            <div className="analyticsGrid">
+              <Bars title="Top categories" items={data.category}/>
+              <Bars title="Hiring companies" items={data.companies}/>
+              <Bars title="Locations" items={data.locations}/>
+              <Bars title="Sources" items={data.sources}/>
+            </div>
+
+            <p className="analyticsUpdated">
+              Live snapshot as of {new Date(data.updatedAt).toLocaleTimeString()}
+            </p>
+          </>
+        )}
+      </section>
+    </main>
+  );
+}

@@ -1,1 +1,71 @@
-"use client";import Link from "next/link";import {FormEvent,useState} from "react";import {useAuth} from "@/components/AuthProvider";export default function Account(){const{email,loading,signIn,signOut}=useAuth();const[value,setValue]=useState("");const[msg,setMsg]=useState("");async function submit(e:FormEvent){e.preventDefault();setMsg("Sending secure sign-in link…");const error=await signIn(value);setMsg(error?"Error: "+error:"Check your email for your secure sign-in link.");}return <main className="detailPage"><header className="boardHeader"><Link className="brand" href="/"><span className="brandMark">✈</span>RemoteFlow</Link><Link className="alertLink" href="/">Board</Link></header><section className="accountPage"><p className="eyebrow">YOUR REMOTEFLOW ID</p><h1>{loading?"Loading…":email?"Account connected":"Take your tracker anywhere."}</h1>{email?<><p className="savedIntro">Signed in as <b>{email}</b>. Your account is ready for cloud sync as connected data tables are enabled.</p><button className="applyButton" onClick={signOut}>Sign out</button></>:<form onSubmit={submit} className="accountForm"><p>Sign in with a passwordless magic link. No password to remember.</p><input type="email" required value={value} onChange={e=>setValue(e.target.value)} placeholder="you@example.com"/><button className="applyButton">Send sign-in link</button>{msg&&<small>{msg}</small>}</form>}<div className="syncRoadmap"><div>☁️<b>Cloud-ready</b><span>Account identity via Supabase Auth</span></div><div>🔒<b>Private</b><span>Your data can be protected with row-level security</span></div><div>📱<b>Cross-device</b><span>Sync layer can migrate saved jobs and applications</span></div></div></section></main>}
+"use client";
+
+import {FormEvent,useState} from "react";
+import {useAuth} from "@/components/AuthProvider";
+import {AppHeader} from "@/components/AppHeader";
+
+export default function Account(){
+  const{email,loading,signIn,signOut}=useAuth();
+  const[value,setValue]=useState("");
+  const[msg,setMsg]=useState("");
+  const[submitting,setSubmitting]=useState(false);
+
+  async function submit(e:FormEvent){
+    e.preventDefault();
+    setSubmitting(true);
+    setMsg("Sending secure sign-in link…");
+    const error=await signIn(value);
+    setMsg(error?"Error: "+error:"Check your email for your secure sign-in magic link.");
+    setSubmitting(false);
+  }
+
+  return(
+    <main className="detailPage">
+      <AppHeader/>
+
+      <section className="accountPage">
+        <p className="eyebrow">YOUR REMOTEFLOW ID</p>
+        <h1>{loading?"Loading…":email?"Account connected":"Take your tracker anywhere."}</h1>
+
+        {email?(
+          <>
+            <p className="savedIntro">
+              Signed in as <b>{email}</b>. Your pipeline, saved jobs, and alert preferences sync securely across your devices.
+            </p>
+            <button className="applyButton" onClick={signOut}>Sign out</button>
+          </>
+        ):(
+          <form onSubmit={submit} className="accountForm">
+            <p>Sign in with a passwordless magic link. No passwords to remember or lose.</p>
+            <input
+              type="email"
+              required
+              value={value}
+              onChange={e=>setValue(e.target.value)}
+              placeholder="you@example.com"
+            />
+            <button className="applyButton" type="submit" disabled={submitting}>
+              {submitting?"Sending link…":"Send sign-in link"}
+            </button>
+            {msg&&<small>{msg}</small>}
+          </form>
+        )}
+
+        <div className="syncRoadmap">
+          <div>
+            ☁️<b>Cloud-ready</b>
+            <span>Account identity verified via Supabase Auth</span>
+          </div>
+          <div>
+            🔒<b>Private</b>
+            <span>Your application notes and shortlist are protected with Row Level Security</span>
+          </div>
+          <div>
+            📱<b>Cross-device</b>
+            <span>Synchronize saved roles, tracker milestones, and alerts on any device</span>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}

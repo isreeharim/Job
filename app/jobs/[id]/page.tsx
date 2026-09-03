@@ -1,8 +1,9 @@
-import Link from "next/link";
 import {notFound} from "next/navigation";
 import {supabase,supabaseAdmin} from "@/lib/supabase";
 import {SaveJobButton} from "@/components/SaveJobButton";
 import {AppHeader} from "@/components/AppHeader";
+import {BackButton} from "@/components/BackButton";
+import {StickyApplyBar} from "@/components/StickyApplyBar";
 import {StarBorder,SpotlightCard} from "@/components/reactbits";
 
 export const dynamic="force-dynamic";
@@ -71,7 +72,7 @@ export default async function JobPage({params}:{params:Promise<{id:string}>}){
       <AppHeader/>
 
       <article className="jobDetail">
-        <Link className="backLink" href="/">← Back to board</Link>
+        <BackButton fallback="/" label="← Back to opportunities" />
         <p className="eyebrow">REMOTE OPPORTUNITY · {job.category?.toUpperCase()||"EARLY CAREER"}</p>
         <h1>{job.title}</h1>
         <h2>{job.company}</h2>
@@ -111,6 +112,8 @@ export default async function JobPage({params}:{params:Promise<{id:string}>}){
           Applications open on the original source ({job.source}). Always verify the employer before sharing sensitive personal information.
         </p>
       </article>
+
+      <StickyApplyBar job={saved} />
     </main>
   );
 }

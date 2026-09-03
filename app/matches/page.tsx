@@ -135,12 +135,18 @@ export default function Matches(){
                 borderHoverColor="var(--amber)"
               >
                 <Link href={"/jobs/"+encodeURIComponent(job.id)} className="matchCard" style={{border:"none",background:"transparent"}}>
-                  <div>
+                  <div className="matchCardInfo">
                     <span className="matchScoreBig">{score}%</span>
-                    <strong>{job.title}</strong>
-                    <small>{job.company} · {job.location||"Worldwide"}</small>
+                    <div>
+                      <strong>{job.title}</strong>
+                      <small>{job.company} · {job.location||"Worldwide"}</small>
+                    </div>
                   </div>
-                  <p>{reasons.join(" · ")}</p>
+                  <div className="matchReasons">
+                    {reasons.map((r,idx)=>(
+                      <span key={idx} className="matchReasonTag">{r}</span>
+                    ))}
+                  </div>
                 </Link>
               </SpotlightCard>
             ))}

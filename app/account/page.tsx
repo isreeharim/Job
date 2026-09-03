@@ -193,7 +193,7 @@ export default function AccountPage(){
                     type="button"
                     className="authTogglePassword"
                     onClick={()=>setShowPassword(!showPassword)}
-                    tabIndex={-1}
+                    aria-label={showPassword?"Hide password":"Show password"}
                   >
                     {showPassword?"Hide":"Show"}
                   </button>

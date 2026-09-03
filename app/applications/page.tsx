@@ -35,6 +35,7 @@ export default function ApplicationsPage(){
   const[cloud,setCloud]=useState(false);
   const[show,setShow]=useState(false);
   const[filter,setFilter]=useState<"all"|"upcoming"|"overdue">("all");
+  const[mobileStatusTab,setMobileStatusTab]=useState<Status|"all">("all");
 
   useEffect(()=>{
     void(async()=>{
@@ -193,12 +194,36 @@ export default function ApplicationsPage(){
           <Link href="/calendar" className="textButton">Open calendar →</Link>
         </div>
 
+        <div className="trackerMobileTabs">
+          <button
+            type="button"
+            className={"trackerMobileTab "+(mobileStatusTab==="all"?"trackerMobileTabActive":"")}
+            onClick={()=>setMobileStatusTab("all")}
+          >
+            All
+          </button>
+          {STATUSES.map(s=>{
+            const count=items.filter(i=>i.status===s).length;
+            return(
+              <button
+                key={s}
+                type="button"
+                className={"trackerMobileTab "+(mobileStatusTab===s?"trackerMobileTabActive":"")}
+                onClick={()=>setMobileStatusTab(s)}
+              >
+                {s} ({count})
+              </button>
+            );
+          })}
+        </div>
+
         <div className="tracker">
           {STATUSES.map(status=>{
             const columnItems=shown.filter(i=>i.status===status);
             const totalInStatus=items.filter(i=>i.status===status).length;
+            const isHiddenMobile=mobileStatusTab!=="all"&&mobileStatusTab!==status;
             return(
-              <div className="trackerColumn" key={status}>
+              <div className={"trackerColumn "+(isHiddenMobile?"trackerColumnHiddenMobile":"")} key={status}>
                 <h3>{status}<span>{totalInStatus}</span></h3>
                 {columnItems.map(item=>(
                   <SpotlightCard

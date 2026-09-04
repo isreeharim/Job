@@ -23,7 +23,18 @@ export function DottedGlobe({ countries, activeCount = 0 }: DottedGlobeProps) {
   const globeRef = useRef<Globe | null>(null);
 
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
-  const [webglSupported, setWebglSupported] = useState<boolean>(true);
+  const [webglSupported, setWebglSupported] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      const c = document.createElement("canvas");
+      return Boolean(
+        window.WebGLRenderingContext &&
+          (c.getContext("webgl") || c.getContext("experimental-webgl"))
+      );
+    } catch {
+      return false;
+    }
+  });
 
   // Compute markers based on countries
   const markers: Marker[] = useMemo(() => {
@@ -43,6 +54,8 @@ export function DottedGlobe({ countries, activeCount = 0 }: DottedGlobeProps) {
       };
     });
   }, [countries]);
+
+  const markersRef = useRef(markers);
 
   // Handle focusing a specific country
   const handleFocusCountry = (countryCode: string) => {
@@ -85,7 +98,7 @@ export function DottedGlobe({ countries, activeCount = 0 }: DottedGlobeProps) {
         glowColor: [0.15, 0.55, 0.45],
         opacity: 0.9,
         offset: [0, 0],
-        markers: markers,
+        markers: markersRef.current,
       });
 
       globeRef.current = globe;
@@ -113,7 +126,7 @@ export function DottedGlobe({ countries, activeCount = 0 }: DottedGlobeProps) {
       animId = requestAnimationFrame(render);
     } catch (err) {
       console.error("WebGL 3D Globe initialization error:", err);
-      setWebglSupported(false);
+      setTimeout(() => setWebglSupported(false), 0);
     }
 
     return () => {
@@ -128,6 +141,7 @@ export function DottedGlobe({ countries, activeCount = 0 }: DottedGlobeProps) {
 
   // Update markers on the live globe when prop updates
   useEffect(() => {
+    markersRef.current = markers;
     if (globeRef.current) {
       globeRef.current.update({ markers });
     }

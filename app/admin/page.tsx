@@ -82,11 +82,12 @@ export default function AdminPage() {
   const [ipSearch, setIpSearch] = useState("");
   const [copiedIp, setCopiedIp] = useState<string | null>(null);
 
+  const liveIps = live?.liveIps;
   const filteredIps = useMemo(() => {
-    if (!live?.liveIps) return [];
-    if (!ipSearch.trim()) return live.liveIps;
+    if (!liveIps) return [];
+    if (!ipSearch.trim()) return liveIps;
     const q = ipSearch.toLowerCase().trim();
-    return live.liveIps.filter(
+    return liveIps.filter(
       (item) =>
         item.ipAddress.toLowerCase().includes(q) ||
         item.pathname.toLowerCase().includes(q) ||
@@ -94,7 +95,7 @@ export default function AdminPage() {
         (item.city && item.city.toLowerCase().includes(q)) ||
         item.device.toLowerCase().includes(q)
     );
-  }, [live?.liveIps, ipSearch]);
+  }, [liveIps, ipSearch]);
 
   const handleCopyIp = (ip: string) => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {

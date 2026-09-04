@@ -31,7 +31,8 @@ function getClientIp(req: NextRequest): string {
   const cfConnectingIp = req.headers.get("cf-connecting-ip");
   if (cfConnectingIp) return cfConnectingIp.trim();
 
-  return (req as any).ip || "127.0.0.1";
+  const rawReq = req as unknown as { ip?: string };
+  return rawReq.ip || "127.0.0.1";
 }
 
 export async function POST(req: NextRequest) {

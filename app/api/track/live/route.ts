@@ -91,11 +91,31 @@ export async function GET(req: NextRequest) {
       .order("created_at", { ascending: false })
       .limit(12);
 
+    // 5. Query permanently saved visitor IPs from visitor_ips registry
+    const { data: savedIpsData } = await client
+      .from("visitor_ips")
+      .select("ip_address, country, city, device, last_pathname, first_seen, last_seen, total_views")
+      .order("last_seen", { ascending: false })
+      .limit(150);
+
+    const savedIps = (savedIpsData || []).map((s) => ({
+      ipAddress: s.ip_address,
+      country: s.country || "Unknown",
+      city: s.city || null,
+      device: s.device || "desktop",
+      lastPathname: s.last_pathname || "/",
+      firstSeen: s.first_seen,
+      lastSeen: s.last_seen,
+      totalViews: s.total_views || 1,
+    }));
+
     return NextResponse.json(
       {
         liveVisitors,
         activeSessions: liveSessions.length,
         liveIps,
+        savedIps,
+        totalSavedIps: savedIps.length,
         totalViews24h: totalViews24h || 0,
         topActivePages,
         devices: deviceCounts,

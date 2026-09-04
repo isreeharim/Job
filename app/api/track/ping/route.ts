@@ -128,7 +128,21 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 3. Purge inactive sessions older than 3 minutes
+    // 3. Save / update permanent visitor IP registry so all IPs are permanently recorded
+    if (ip && ip !== "127.0.0.1") {
+      try {
+        await client.rpc("upsert_visitor_ip", {
+          p_ip: ip,
+          p_country: country,
+          p_city: city,
+          p_device: device,
+          p_pathname: pathname,
+          p_now: now,
+        });
+      } catch {}
+    }
+
+    // 4. Purge inactive live sessions older than 3 minutes (visitor_ips remains permanent)
     if (Math.random() < 0.15) {
       const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000).toISOString();
       await client.from("live_sessions").delete().lt("last_ping_at", threeMinutesAgo);

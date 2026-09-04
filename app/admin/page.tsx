@@ -17,10 +17,23 @@ export type LiveSessionItem = {
   secondsAgo: number;
 };
 
+export type SavedIpItem = {
+  ipAddress: string;
+  country: string;
+  city: string | null;
+  device: string;
+  lastPathname: string;
+  firstSeen: string;
+  lastSeen: string;
+  totalViews: number;
+};
+
 type LiveData = {
   liveVisitors: number;
   activeSessions: number;
   liveIps: LiveSessionItem[];
+  savedIps?: SavedIpItem[];
+  totalSavedIps?: number;
   totalViews24h: number;
   topActivePages: { pathname: string; count: number }[];
   devices: { mobile: number; desktop: number; tablet: number };
@@ -79,23 +92,39 @@ export default function AdminPage() {
 
   // Telemetry Tab state
   const [telemetryTab, setTelemetryTab] = useState<"ips" | "globe" | "stream">("ips");
+  const [ipViewMode, setIpViewMode] = useState<"all" | "live">("all");
   const [ipSearch, setIpSearch] = useState("");
   const [copiedIp, setCopiedIp] = useState<string | null>(null);
 
   const liveIps = live?.liveIps;
-  const filteredIps = useMemo(() => {
-    if (!liveIps) return [];
-    if (!ipSearch.trim()) return liveIps;
+  const savedIps = live?.savedIps;
+
+  const displayedIps = useMemo(() => {
     const q = ipSearch.toLowerCase().trim();
-    return liveIps.filter(
-      (item) =>
-        item.ipAddress.toLowerCase().includes(q) ||
-        item.pathname.toLowerCase().includes(q) ||
-        item.country.toLowerCase().includes(q) ||
-        (item.city && item.city.toLowerCase().includes(q)) ||
-        item.device.toLowerCase().includes(q)
-    );
-  }, [liveIps, ipSearch]);
+    if (ipViewMode === "live") {
+      if (!liveIps) return [];
+      if (!q) return liveIps;
+      return liveIps.filter(
+        (item) =>
+          item.ipAddress.toLowerCase().includes(q) ||
+          item.pathname.toLowerCase().includes(q) ||
+          item.country.toLowerCase().includes(q) ||
+          (item.city && item.city.toLowerCase().includes(q)) ||
+          item.device.toLowerCase().includes(q)
+      );
+    } else {
+      if (!savedIps) return [];
+      if (!q) return savedIps;
+      return savedIps.filter(
+        (item) =>
+          item.ipAddress.toLowerCase().includes(q) ||
+          item.lastPathname.toLowerCase().includes(q) ||
+          item.country.toLowerCase().includes(q) ||
+          (item.city && item.city.toLowerCase().includes(q)) ||
+          item.device.toLowerCase().includes(q)
+      );
+    }
+  }, [liveIps, savedIps, ipViewMode, ipSearch]);
 
   const handleCopyIp = (ip: string) => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -103,6 +132,33 @@ export default function AdminPage() {
       setCopiedIp(ip);
       setTimeout(() => setCopiedIp(null), 2000);
     }
+  };
+
+  const exportIpsToCsv = () => {
+    const list = savedIps && savedIps.length ? savedIps : liveIps || [];
+    if (!list.length) return;
+    const headers = ["IP Address", "Country", "City", "Device", "Total Views", "First Seen", "Last Seen", "Last Path"];
+    const rows = list.map((item) => {
+      const isSaved = "firstSeen" in item;
+      return [
+        `"${item.ipAddress}"`,
+        `"${item.country}"`,
+        `"${item.city || ""}"`,
+        `"${item.device}"`,
+        isSaved ? (item as SavedIpItem).totalViews : 1,
+        `"${isSaved ? (item as SavedIpItem).firstSeen : (item as LiveSessionItem).lastPingAt}"`,
+        `"${isSaved ? (item as SavedIpItem).lastSeen : (item as LiveSessionItem).lastPingAt}"`,
+        `"${isSaved ? (item as SavedIpItem).lastPathname : (item as LiveSessionItem).pathname}"`,
+      ];
+    });
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `remoteflow-all-saved-ips-${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // 1. Check session on mount
@@ -503,36 +559,68 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* ── TAB 1: LIVE IP ADDRESSES ── */}
+          {/* ── TAB 1: VISITOR IP REGISTRY & LIVE TELEMETRY ── */}
           {telemetryTab === "ips" && (
             <div className="ipTableCard">
               <div className="ipTableHeader">
                 <div>
                   <h3 style={{ fontSize: 14, fontWeight: 700, margin: 0, color: "var(--ink)", letterSpacing: 0.6, textTransform: "uppercase", fontFamily: "var(--font-display), sans-serif" }}>
-                    Connected Live IP Addresses ({filteredIps.length})
+                    {ipViewMode === "all"
+                      ? `All Saved IP Registry (${displayedIps.length})`
+                      : `Connected Live IP Addresses (${displayedIps.length})`}
                   </h3>
                   <span style={{ fontSize: 11.5, color: "var(--ink-dim)" }}>
-                    Real-time visitor IP tracking · Page reloads do not duplicate viewers
+                    {ipViewMode === "all"
+                      ? "Permanent database record of all visitor IPs · Never deleted"
+                      : "Real-time edge visitors active within last 2 minutes"}
                   </span>
                 </div>
 
-                <div className="ipTableSearch">
-                  <span>🔍</span>
-                  <input
-                    type="text"
-                    placeholder="Filter by IP, country, route, device…"
-                    value={ipSearch}
-                    onChange={(e) => setIpSearch(e.target.value)}
-                  />
-                  {ipSearch && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <div className="ipModeToggle">
                     <button
                       type="button"
-                      onClick={() => setIpSearch("")}
-                      style={{ background: "none", border: "none", color: "var(--ink-dim)", cursor: "pointer", fontSize: 11 }}
+                      className={`ipModeBtn ${ipViewMode === "all" ? "active" : ""}`}
+                      onClick={() => setIpViewMode("all")}
                     >
-                      ✕
+                      📁 All Saved IPs ({savedIps?.length || 0})
                     </button>
-                  )}
+                    <button
+                      type="button"
+                      className={`ipModeBtn ${ipViewMode === "live" ? "active" : ""}`}
+                      onClick={() => setIpViewMode("live")}
+                    >
+                      🟢 Active Live ({liveIps?.length || 0})
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="ipExportBtn"
+                    onClick={exportIpsToCsv}
+                    title="Download all permanently saved IPs to a CSV file"
+                  >
+                    📥 Export CSV
+                  </button>
+
+                  <div className="ipTableSearch">
+                    <span>🔍</span>
+                    <input
+                      type="text"
+                      placeholder="Search IP, country, city, route…"
+                      value={ipSearch}
+                      onChange={(e) => setIpSearch(e.target.value)}
+                    />
+                    {ipSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setIpSearch("")}
+                        style={{ background: "none", border: "none", color: "var(--ink-dim)", cursor: "pointer", fontSize: 11 }}
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -543,22 +631,34 @@ export default function AdminPage() {
                       <th>Status</th>
                       <th>IP Address</th>
                       <th>Location / City</th>
-                      <th>Current Route</th>
+                      {ipViewMode === "all" ? <th>Total Hits</th> : null}
+                      <th>{ipViewMode === "all" ? "Last Route" : "Current Route"}</th>
                       <th>Device</th>
-                      <th>Last Active</th>
+                      <th>{ipViewMode === "all" ? "Last Seen" : "Active Latency"}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredIps.length > 0 ? (
-                      filteredIps.map((v) => {
+                    {displayedIps.length > 0 ? (
+                      displayedIps.map((raw) => {
+                        const isSaved = "firstSeen" in raw;
+                        const v = raw as (SavedIpItem & LiveSessionItem);
                         const geo = getCountryGeo(v.country);
+                        const isLiveNow = liveIps?.some((l) => l.ipAddress === v.ipAddress);
+                        const targetPath = isSaved ? v.lastPathname : v.pathname;
+
                         return (
-                          <tr key={v.sessionId}>
+                          <tr key={v.ipAddress + (v.sessionId || "")}>
                             <td>
-                              <span className="ipStatusActive">
-                                <span className="liveDot" style={{ width: 6, height: 6 }} />
-                                {v.secondsAgo < 15 ? "Active now" : `${v.secondsAgo}s ago`}
-                              </span>
+                              {isLiveNow ? (
+                                <span className="ipStatusActive">
+                                  <span className="liveDot" style={{ width: 6, height: 6 }} />
+                                  Active now
+                                </span>
+                              ) : (
+                                <span style={{ color: "var(--ink-dim)", fontSize: 11 }}>
+                                  {isSaved ? timeAgo(v.lastSeen) : `${v.secondsAgo}s ago`}
+                                </span>
+                              )}
                             </td>
                             <td>
                               <div className="ipCell">
@@ -584,14 +684,21 @@ export default function AdminPage() {
                                 )}
                               </div>
                             </td>
+                            {ipViewMode === "all" ? (
+                              <td>
+                                <span style={{ background: "rgba(244, 185, 66, 0.1)", color: "var(--amber)", padding: "2px 7px", borderRadius: 4, fontWeight: 700, fontSize: 11 }}>
+                                  {v.totalViews || 1} hits
+                                </span>
+                              </td>
+                            ) : null}
                             <td>
                               <Link
-                                href={v.pathname}
+                                href={targetPath || "/"}
                                 target="_blank"
                                 className="ipRouteBadge"
-                                title={`Open ${v.pathname}`}
+                                title={`Open ${targetPath}`}
                               >
-                                {v.pathname}
+                                {targetPath || "/"}
                               </Link>
                             </td>
                             <td>
@@ -600,17 +707,19 @@ export default function AdminPage() {
                               </span>
                             </td>
                             <td style={{ color: "var(--ink-dim)", fontSize: 11.5, whiteSpace: "nowrap" }}>
-                              {timeAgo(v.lastPingAt)}
+                              {isSaved ? timeAgo(v.lastSeen) : timeAgo(v.lastPingAt)}
                             </td>
                           </tr>
                         );
                       })
                     ) : (
                       <tr>
-                        <td colSpan={6} className="ipEmptyState">
+                        <td colSpan={ipViewMode === "all" ? 7 : 6} className="ipEmptyState">
                           {ipSearch
-                            ? `No active visitors matching "${ipSearch}".`
-                            : "Waiting for live visitor pings… Open the website in another tab or device to test live IP tracking."}
+                            ? `No IP addresses matching "${ipSearch}".`
+                            : ipViewMode === "all"
+                            ? "No saved IP addresses recorded in the registry yet."
+                            : "Waiting for live visitor pings… Open the website in another window or device."}
                         </td>
                       </tr>
                     )}

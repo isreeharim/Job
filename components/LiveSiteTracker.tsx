@@ -46,6 +46,15 @@ export type ClientLocation = {
 
 async function getCachedLocation(): Promise<ClientLocation | null> {
   if (typeof window === "undefined") return null;
+  // 1. Check exact GPS location from localStorage
+  try {
+    const gps = localStorage.getItem("rf_device_location") || localStorage.getItem("rf_geo_location");
+    if (gps) {
+      return JSON.parse(gps);
+    }
+  } catch {}
+
+  // 2. Check session cache
   try {
     const cached = sessionStorage.getItem("rf_geo_location");
     if (cached) {
@@ -53,6 +62,7 @@ async function getCachedLocation(): Promise<ClientLocation | null> {
     }
   } catch {}
 
+  // 3. Fallback to IP geolocation
   try {
     const res = await fetch("https://ipwho.is/", { cache: "force-cache" });
     if (res.ok) {
@@ -96,6 +106,16 @@ function TrackerInternal() {
         locationRef.current = loc;
       }
     });
+
+    // Listen for live GPS location updates from LocationPermissionPrompt
+    const handleLocationUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent<ClientLocation>;
+      if (customEvent.detail) {
+        locationRef.current = customEvent.detail;
+      }
+    };
+    window.addEventListener("rf_location_updated", handleLocationUpdated);
+    return () => window.removeEventListener("rf_location_updated", handleLocationUpdated);
   }, []);
 
   useEffect(() => {

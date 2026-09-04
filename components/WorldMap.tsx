@@ -375,6 +375,16 @@ export function WorldMap({ countries, locations, activeCount = 0 }: WorldMapProp
                 {Math.abs(activeDetail.lng).toFixed(2)}°
                 {activeDetail.lng >= 0 ? "E" : "W"}
               </div>
+              <a
+                href={`https://www.google.com/maps?q=${activeDetail.lat},${activeDetail.lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="worldMapTooltipMapLink"
+                onClick={(e) => e.stopPropagation()}
+                title="Open exact location in Google Maps"
+              >
+                🗺️ Open in Google Maps ↗
+              </a>
             </div>
           )}
         </div>

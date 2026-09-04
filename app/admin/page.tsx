@@ -57,6 +57,9 @@ type LiveData = {
     pathname: string;
     country: string;
     city?: string | null;
+    region?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
     ipAddress?: string | null;
     device: string;
     createdAt: string;
@@ -160,6 +163,7 @@ export default function AdminPage() {
       "Region",
       "Latitude",
       "Longitude",
+      "Google Maps Link",
       "Device",
       "Total Views",
       "First Seen",
@@ -169,6 +173,10 @@ export default function AdminPage() {
     const rows = list.map((item) => {
       const isSaved = "firstSeen" in item;
       const s = item as (SavedIpItem & LiveSessionItem);
+      const hasCoords = typeof s.latitude === "number" && typeof s.longitude === "number" && (s.latitude !== 0 || s.longitude !== 0);
+      const mapLink = hasCoords
+        ? `https://www.google.com/maps?q=${s.latitude},${s.longitude}`
+        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([s.city, s.region, s.country].filter(Boolean).join(", "))}`;
       return [
         `"${s.ipAddress}"`,
         `"${s.country || ""}"`,
@@ -176,6 +184,7 @@ export default function AdminPage() {
         `"${s.region || ""}"`,
         `"${typeof s.latitude === "number" ? s.latitude : ""}"`,
         `"${typeof s.longitude === "number" ? s.longitude : ""}"`,
+        `"${mapLink}"`,
         `"${s.device || ""}"`,
         isSaved ? s.totalViews : 1,
         `"${isSaved ? s.firstSeen : s.lastPingAt}"`,
@@ -714,21 +723,26 @@ export default function AdminPage() {
                                     · {v.city}{v.region ? `, ${v.region}` : ""}
                                   </span>
                                 )}
-                                {typeof v.latitude === "number" && typeof v.longitude === "number" && (v.latitude !== 0 || v.longitude !== 0) && (
-                                  <span
-                                    title={`Exact coordinates: ${v.latitude.toFixed(4)}, ${v.longitude.toFixed(4)}`}
-                                    style={{
-                                      fontSize: 10,
-                                      background: "rgba(63, 168, 143, 0.12)",
-                                      color: "var(--teal)",
-                                      padding: "1px 5px",
-                                      borderRadius: 4,
-                                      fontFamily: "monospace",
-                                      cursor: "help",
-                                    }}
+                                {typeof v.latitude === "number" && typeof v.longitude === "number" && (v.latitude !== 0 || v.longitude !== 0) ? (
+                                  <a
+                                    href={`https://www.google.com/maps?q=${v.latitude},${v.longitude}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title={`Open exact GPS coordinates (${v.latitude.toFixed(4)}, ${v.longitude.toFixed(4)}) on Google Maps ↗`}
+                                    className="ipLocationMapLink"
                                   >
-                                    📍 {v.latitude.toFixed(2)}°, {v.longitude.toFixed(2)}°
-                                  </span>
+                                    📍 {v.latitude.toFixed(2)}°, {v.longitude.toFixed(2)}° ↗
+                                  </a>
+                                ) : (
+                                  <a
+                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([v.city, v.region, geo.name].filter(Boolean).join(", "))}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title="Search location on Google Maps ↗"
+                                    className="ipLocationMapLink"
+                                  >
+                                    🗺️ Map ↗
+                                  </a>
                                 )}
                               </div>
                             </td>
@@ -833,7 +847,20 @@ export default function AdminPage() {
                         </span>
                         <span className="activityMeta">
                           {e.country !== "Unknown" ? `[${e.country}] ` : ""}
-                          {e.ipAddress ? `${e.ipAddress} · ` : ""}
+                          {e.city ? `${e.city} · ` : ""}
+                          {typeof e.latitude === "number" && typeof e.longitude === "number" && (e.latitude !== 0 || e.longitude !== 0) ? (
+                            <a
+                              href={`https://www.google.com/maps?q=${e.latitude},${e.longitude}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="ipLocationMapLink"
+                              style={{ padding: "1px 5px", fontSize: 9.5 }}
+                              title="Open in Google Maps"
+                            >
+                              📍 Map ↗
+                            </a>
+                          ) : null}
+                          {e.ipAddress ? ` ${e.ipAddress} · ` : ""}
                           {e.device} · {timeAgo(e.createdAt)}
                         </span>
                       </div>

@@ -19,23 +19,52 @@ export async function GET(req: NextRequest) {
     const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-    // 1. Current live visitors
+    // 1. Current live visitors (active within last 2 minutes)
     const { data: liveData, error: liveError } = await client
       .from("live_sessions")
-      .select("session_id, pathname, country, device")
-      .gte("last_ping_at", twoMinutesAgo);
+      .select("session_id, ip_address, city, pathname, country, device, last_ping_at")
+      .gte("last_ping_at", twoMinutesAgo)
+      .order("last_ping_at", { ascending: false });
 
     if (liveError) throw liveError;
 
     const liveSessions = liveData || [];
-    const liveVisitors = liveSessions.length;
 
-    // 2. Active pages breakdown
+    // Deduplicate by IP address so page refreshes or multiple tabs never count as multiple viewers
+    const uniqueVisitorsMap = new Map<string, (typeof liveSessions)[0]>();
+    for (const s of liveSessions) {
+      const key = s.ip_address && s.ip_address !== "127.0.0.1" ? s.ip_address : s.session_id;
+      if (!uniqueVisitorsMap.has(key)) {
+        uniqueVisitorsMap.set(key, s);
+      }
+    }
+
+    const deduplicatedSessions = Array.from(uniqueVisitorsMap.values());
+    const liveVisitors = Math.max(1, deduplicatedSessions.length);
+
+    // Format live IP addresses list for admin tab
+    const now = Date.now();
+    const liveIps = deduplicatedSessions.map((s) => {
+      const pingTime = new Date(s.last_ping_at).getTime();
+      const secondsAgo = Math.max(0, Math.floor((now - pingTime) / 1000));
+      return {
+        sessionId: s.session_id,
+        ipAddress: s.ip_address || "Hidden/Proxy",
+        country: s.country || "Unknown",
+        city: s.city || null,
+        pathname: s.pathname,
+        device: s.device || "desktop",
+        lastPingAt: s.last_ping_at,
+        secondsAgo,
+      };
+    });
+
+    // 2. Active pages breakdown (deduplicated per viewer)
     const pageCounts: Record<string, number> = {};
     const countryCounts: Record<string, number> = {};
     const deviceCounts: Record<string, number> = { mobile: 0, desktop: 0, tablet: 0 };
 
-    for (const s of liveSessions) {
+    for (const s of deduplicatedSessions) {
       pageCounts[s.pathname] = (pageCounts[s.pathname] || 0) + 1;
       if (s.country && s.country !== "Unknown") {
         countryCounts[s.country] = (countryCounts[s.country] || 0) + 1;
@@ -46,26 +75,27 @@ export async function GET(req: NextRequest) {
 
     const topActivePages = Object.entries(pageCounts)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 6)
+      .slice(0, 8)
       .map(([pathname, count]) => ({ pathname, count }));
 
-    // 3. 24h pageviews & unique visitors from site_telemetry
+    // 3. 24h pageviews from site_telemetry
     const { count: totalViews24h } = await client
       .from("site_telemetry")
       .select("*", { count: "exact", head: true })
       .gte("created_at", twentyFourHoursAgo);
 
-    // 4. Recent activity stream (last 10 events)
+    // 4. Recent activity stream (last 12 events)
     const { data: recentEvents } = await client
       .from("site_telemetry")
-      .select("id, pathname, country, device, created_at")
+      .select("id, pathname, country, city, ip_address, device, created_at")
       .order("created_at", { ascending: false })
-      .limit(10);
+      .limit(12);
 
     return NextResponse.json(
       {
-        liveVisitors: Math.max(1, liveVisitors), // Always reflect at least current session
-        activeSessions: liveVisitors,
+        liveVisitors,
+        activeSessions: liveSessions.length,
+        liveIps,
         totalViews24h: totalViews24h || 0,
         topActivePages,
         devices: deviceCounts,
@@ -77,6 +107,8 @@ export async function GET(req: NextRequest) {
           id: e.id,
           pathname: e.pathname,
           country: e.country,
+          city: e.city || null,
+          ipAddress: e.ip_address || null,
           device: e.device,
           createdAt: e.created_at,
         })),

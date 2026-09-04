@@ -3,14 +3,31 @@
 import { useEffect, useRef, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
-function getSessionId(): string {
+function getVisitorId(): string {
   if (typeof window === "undefined") return "guest";
   try {
-    let id = sessionStorage.getItem("rf_session_id");
+    // 1. Check localStorage for persistent visitor identity
+    let id = localStorage.getItem("rf_visitor_id");
     if (!id) {
-      id = "rf_" + Math.random().toString(36).slice(2, 10) + "_" + Date.now().toString(36);
-      sessionStorage.setItem("rf_session_id", id);
+      // 2. Check cookie fallback
+      const match = document.cookie.match(/(?:^|;\s*)rf_vid=([^;]+)/);
+      if (match && match[1]) {
+        id = match[1];
+      }
     }
+    if (!id) {
+      // 3. Check sessionStorage
+      id = sessionStorage.getItem("rf_session_id");
+    }
+    if (!id) {
+      // 4. Generate new stable ID
+      id = "rf_" + Math.random().toString(36).slice(2, 10) + "_" + Date.now().toString(36);
+    }
+
+    // Sync across all storages
+    localStorage.setItem("rf_visitor_id", id);
+    sessionStorage.setItem("rf_session_id", id);
+    document.cookie = `rf_vid=${id}; path=/; max-age=31536000; SameSite=Lax`;
     return id;
   } catch {
     return "guest_" + Math.random().toString(36).slice(2, 10);
@@ -23,11 +40,11 @@ function TrackerInternal() {
   const sessionIdRef = useRef<string>("");
 
   useEffect(() => {
-    sessionIdRef.current = getSessionId();
+    sessionIdRef.current = getVisitorId();
   }, []);
 
   useEffect(() => {
-    const sid = sessionIdRef.current || getSessionId();
+    const sid = sessionIdRef.current || getVisitorId();
     const query = searchParams?.toString();
     const fullPath = query ? `${pathname}?${query}` : pathname;
     const referrer = typeof document !== "undefined" ? document.referrer : "";

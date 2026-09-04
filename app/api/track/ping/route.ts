@@ -10,6 +10,30 @@ function getDevice(ua: string | null): string {
   return "desktop";
 }
 
+function getClientIp(req: NextRequest): string {
+  const xForwardedFor = req.headers.get("x-forwarded-for");
+  if (xForwardedFor) {
+    const ips = xForwardedFor.split(",").map((s) => s.trim());
+    const publicIp = ips.find(
+      (ip) =>
+        ip &&
+        ip !== "127.0.0.1" &&
+        ip !== "::1" &&
+        !ip.startsWith("10.") &&
+        !ip.startsWith("192.168.")
+    );
+    if (publicIp) return publicIp;
+    if (ips[0]) return ips[0];
+  }
+  const xRealIp = req.headers.get("x-real-ip");
+  if (xRealIp) return xRealIp.trim();
+
+  const cfConnectingIp = req.headers.get("cf-connecting-ip");
+  if (cfConnectingIp) return cfConnectingIp.trim();
+
+  return (req as any).ip || "127.0.0.1";
+}
+
 export async function POST(req: NextRequest) {
   const client = supabaseAdmin || supabase;
   if (!client) {
@@ -27,19 +51,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "sessionId required" }, { status: 400 });
     }
 
+    const ip = getClientIp(req);
+
     const country =
       req.headers.get("x-vercel-ip-country") ||
       req.headers.get("cf-ipcountry") ||
       "Unknown";
 
+    let city: string | null =
+      req.headers.get("x-vercel-ip-city") ||
+      req.headers.get("cf-ipcity") ||
+      null;
+
+    if (city) {
+      try {
+        city = decodeURIComponent(city);
+      } catch {}
+    }
+
     const userAgent = req.headers.get("user-agent");
     const device = getDevice(userAgent);
     const now = new Date().toISOString();
 
-    // 1. Upsert live session
+    // 1. Upsert live session with IP address and city
     await client.from("live_sessions").upsert(
       {
         session_id: sessionId,
+        ip_address: ip,
+        city,
         pathname,
         country,
         device,
@@ -48,22 +87,50 @@ export async function POST(req: NextRequest) {
       { onConflict: "session_id" }
     );
 
-    // 2. If it's an initial route view (not a periodic background heartbeat ping), record pageview
-    if (!isPing) {
-      await client.from("site_telemetry").insert({
-        session_id: sessionId,
-        pathname,
-        referrer,
-        country,
-        device,
-        created_at: now,
-      });
+    // Clean up any stale sessions for the same IP (e.g. from an old tab or refreshed window)
+    if (ip && ip !== "127.0.0.1") {
+      await client
+        .from("live_sessions")
+        .delete()
+        .eq("ip_address", ip)
+        .neq("session_id", sessionId);
     }
 
-    // 3. Opportunistically purge dead sessions older than 5 minutes
-    if (Math.random() < 0.1) {
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-      await client.from("live_sessions").delete().lt("last_ping_at", fiveMinutesAgo);
+    // 2. Record pageview only if not a refresh/reload on the same route within 60s
+    if (!isPing) {
+      const sixtySecondsAgo = new Date(Date.now() - 60 * 1000).toISOString();
+      const filterConditions = [`session_id.eq.${sessionId}`];
+      if (ip && ip !== "127.0.0.1") {
+        filterConditions.push(`ip_address.eq.${ip}`);
+      }
+
+      const { data: recentHits } = await client
+        .from("site_telemetry")
+        .select("id")
+        .eq("pathname", pathname)
+        .or(filterConditions.join(","))
+        .gte("created_at", sixtySecondsAgo)
+        .limit(1);
+
+      // If already logged recently on this route for this viewer/IP, do not duplicate
+      if (!recentHits || recentHits.length === 0) {
+        await client.from("site_telemetry").insert({
+          session_id: sessionId,
+          ip_address: ip,
+          city,
+          pathname,
+          referrer,
+          country,
+          device,
+          created_at: now,
+        });
+      }
+    }
+
+    // 3. Purge inactive sessions older than 3 minutes
+    if (Math.random() < 0.15) {
+      const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000).toISOString();
+      await client.from("live_sessions").delete().lt("last_ping_at", threeMinutesAgo);
     }
 
     return NextResponse.json({ ok: true });

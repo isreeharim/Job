@@ -1,13 +1,26 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { SpotlightCard } from "@/components/reactbits/SpotlightCard";
 import { DottedGlobe } from "@/components/DottedGlobe";
+import { getCountryGeo } from "@/lib/country-coords";
+
+export type LiveSessionItem = {
+  sessionId: string;
+  ipAddress: string;
+  country: string;
+  city: string | null;
+  pathname: string;
+  device: string;
+  lastPingAt: string;
+  secondsAgo: number;
+};
 
 type LiveData = {
   liveVisitors: number;
   activeSessions: number;
+  liveIps: LiveSessionItem[];
   totalViews24h: number;
   topActivePages: { pathname: string; count: number }[];
   devices: { mobile: number; desktop: number; tablet: number };
@@ -16,6 +29,8 @@ type LiveData = {
     id: number;
     pathname: string;
     country: string;
+    city?: string | null;
+    ipAddress?: string | null;
     device: string;
     createdAt: string;
   }[];
@@ -61,6 +76,33 @@ export default function AdminPage() {
   const [health, setHealth] = useState<HealthData | null>(null);
   const [refreshingScraper, setRefreshingScraper] = useState(false);
   const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
+
+  // Telemetry Tab state
+  const [telemetryTab, setTelemetryTab] = useState<"ips" | "globe" | "stream">("ips");
+  const [ipSearch, setIpSearch] = useState("");
+  const [copiedIp, setCopiedIp] = useState<string | null>(null);
+
+  const filteredIps = useMemo(() => {
+    if (!live?.liveIps) return [];
+    if (!ipSearch.trim()) return live.liveIps;
+    const q = ipSearch.toLowerCase().trim();
+    return live.liveIps.filter(
+      (item) =>
+        item.ipAddress.toLowerCase().includes(q) ||
+        item.pathname.toLowerCase().includes(q) ||
+        item.country.toLowerCase().includes(q) ||
+        (item.city && item.city.toLowerCase().includes(q)) ||
+        item.device.toLowerCase().includes(q)
+    );
+  }, [live?.liveIps, ipSearch]);
+
+  const handleCopyIp = (ip: string) => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(ip);
+      setCopiedIp(ip);
+      setTimeout(() => setCopiedIp(null), 2000);
+    }
+  };
 
   // 1. Check session on mount
   useEffect(() => {
@@ -399,13 +441,13 @@ export default function AdminPage() {
             <div className="liveCard liveCardPrimary">
               <span className="liveCardTitle">Active Visitors Now</span>
               <b className="liveCardBigNumber">{live ? live.liveVisitors : "…"}</b>
-              <small className="liveCardSub">Active in last 2 minutes</small>
+              <small className="liveCardSub">Deduplicated unique viewers</small>
             </div>
 
             <div className="liveCard">
               <span className="liveCardTitle">24-Hour Verified Views</span>
               <b className="liveCardBigNumber">{live ? live.totalViews24h : "…"}</b>
-              <small className="liveCardSub">Total recorded pageviews</small>
+              <small className="liveCardSub">Refreshes deduplicated</small>
             </div>
 
             <div className="liveCard">
@@ -423,29 +465,185 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* ── 3D DOTTED GLOBE TELEMETRY ── */}
-          <div style={{ marginTop: 24 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span className="liveDot" style={{ background: "var(--amber)", boxShadow: "0 0 8px var(--amber)" }} />
-                <h3 style={{ fontSize: 14, fontWeight: 700, margin: 0, color: "var(--ink)", letterSpacing: 0.6, textTransform: "uppercase", fontFamily: "var(--font-display), sans-serif" }}>
-                  Global Audience Telemetry (Interactive 3D Dotted Globe)
-                </h3>
-              </div>
-              <span style={{ fontSize: 11.5, color: "var(--ink-dim)" }}>
-                Drag globe to rotate · Real-time edge IP mapping
-              </span>
+          {/* ── TELEMETRY VIEW TABS ── */}
+          <div className="telemetryNavWrapper">
+            <div className="telemetryTabs">
+              <button
+                type="button"
+                className={`telemetryTabBtn ${telemetryTab === "ips" ? "active" : ""}`}
+                onClick={() => setTelemetryTab("ips")}
+              >
+                <span className="liveDot" style={{ width: 6, height: 6 }} />
+                <span>Live IP Addresses</span>
+                <span className="telemetryTabBadge">{live?.liveIps?.length || 0}</span>
+              </button>
+
+              <button
+                type="button"
+                className={`telemetryTabBtn ${telemetryTab === "globe" ? "active" : ""}`}
+                onClick={() => setTelemetryTab("globe")}
+              >
+                <span>3D Dotted Globe</span>
+              </button>
+
+              <button
+                type="button"
+                className={`telemetryTabBtn ${telemetryTab === "stream" ? "active" : ""}`}
+                onClick={() => setTelemetryTab("stream")}
+              >
+                <span>Activity & Routes</span>
+              </button>
             </div>
 
-            <DottedGlobe
-              countries={live?.topCountries || []}
-              activeCount={live?.liveVisitors || 0}
-            />
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 11.5, color: "var(--ink-dim)" }}>
+                Auto-sync 6s · Deduplicated (reload-safe)
+              </span>
+            </div>
           </div>
 
-          {/* ── ACTIVE ROUTES & ACTIVITY STREAM ── */}
-          {live && (
-            <div className="liveDetailsGrid" style={{ marginTop: 20 }}>
+          {/* ── TAB 1: LIVE IP ADDRESSES ── */}
+          {telemetryTab === "ips" && (
+            <div className="ipTableCard">
+              <div className="ipTableHeader">
+                <div>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, margin: 0, color: "var(--ink)", letterSpacing: 0.6, textTransform: "uppercase", fontFamily: "var(--font-display), sans-serif" }}>
+                    Connected Live IP Addresses ({filteredIps.length})
+                  </h3>
+                  <span style={{ fontSize: 11.5, color: "var(--ink-dim)" }}>
+                    Real-time visitor IP tracking · Page reloads do not duplicate viewers
+                  </span>
+                </div>
+
+                <div className="ipTableSearch">
+                  <span>🔍</span>
+                  <input
+                    type="text"
+                    placeholder="Filter by IP, country, route, device…"
+                    value={ipSearch}
+                    onChange={(e) => setIpSearch(e.target.value)}
+                  />
+                  {ipSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setIpSearch("")}
+                      style={{ background: "none", border: "none", color: "var(--ink-dim)", cursor: "pointer", fontSize: 11 }}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="ipTableContainer">
+                <table className="ipTable">
+                  <thead>
+                    <tr>
+                      <th>Status</th>
+                      <th>IP Address</th>
+                      <th>Location / City</th>
+                      <th>Current Route</th>
+                      <th>Device</th>
+                      <th>Last Active</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredIps.length > 0 ? (
+                      filteredIps.map((v) => {
+                        const geo = getCountryGeo(v.country);
+                        return (
+                          <tr key={v.sessionId}>
+                            <td>
+                              <span className="ipStatusActive">
+                                <span className="liveDot" style={{ width: 6, height: 6 }} />
+                                {v.secondsAgo < 15 ? "Active now" : `${v.secondsAgo}s ago`}
+                              </span>
+                            </td>
+                            <td>
+                              <div className="ipCell">
+                                <span>{v.ipAddress}</span>
+                                <button
+                                  type="button"
+                                  className="ipCopyBtn"
+                                  onClick={() => handleCopyIp(v.ipAddress)}
+                                  title="Copy IP Address"
+                                >
+                                  {copiedIp === v.ipAddress ? "Copied!" : "Copy"}
+                                </button>
+                              </div>
+                            </td>
+                            <td>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <span style={{ fontSize: 15 }}>{geo.flag}</span>
+                                <span style={{ fontWeight: 600 }}>{geo.name}</span>
+                                {v.city && (
+                                  <span style={{ color: "var(--ink-dim)", fontSize: 11.5 }}>
+                                    · {v.city}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td>
+                              <Link
+                                href={v.pathname}
+                                target="_blank"
+                                className="ipRouteBadge"
+                                title={`Open ${v.pathname}`}
+                              >
+                                {v.pathname}
+                              </Link>
+                            </td>
+                            <td>
+                              <span className="ipDeviceBadge">
+                                {v.device === "mobile" ? "📱 Mobile" : v.device === "tablet" ? "📟 Tablet" : "💻 Desktop"}
+                              </span>
+                            </td>
+                            <td style={{ color: "var(--ink-dim)", fontSize: 11.5, whiteSpace: "nowrap" }}>
+                              {timeAgo(v.lastPingAt)}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="ipEmptyState">
+                          {ipSearch
+                            ? `No active visitors matching "${ipSearch}".`
+                            : "Waiting for live visitor pings… Open the website in another tab or device to test live IP tracking."}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ── TAB 2: 3D DOTTED GLOBE ── */}
+          {telemetryTab === "globe" && (
+            <div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span className="liveDot" style={{ background: "var(--amber)", boxShadow: "0 0 8px var(--amber)" }} />
+                  <h3 style={{ fontSize: 14, fontWeight: 700, margin: 0, color: "var(--ink)", letterSpacing: 0.6, textTransform: "uppercase", fontFamily: "var(--font-display), sans-serif" }}>
+                    Global Audience Telemetry (Interactive 3D Dotted Globe)
+                  </h3>
+                </div>
+                <span style={{ fontSize: 11.5, color: "var(--ink-dim)" }}>
+                  Drag globe to rotate · Real-time edge IP mapping
+                </span>
+              </div>
+
+              <DottedGlobe
+                countries={live?.topCountries || []}
+                activeCount={live?.liveVisitors || 0}
+              />
+            </div>
+          )}
+
+          {/* ── TAB 3: ACTIVE ROUTES & ACTIVITY STREAM ── */}
+          {telemetryTab === "stream" && live && (
+            <div className="liveDetailsGrid">
               {/* Active Pages */}
               <div className="analyticsCard">
                 <h2>Active Routes Right Now</h2>
@@ -476,6 +674,7 @@ export default function AdminPage() {
                         </span>
                         <span className="activityMeta">
                           {e.country !== "Unknown" ? `[${e.country}] ` : ""}
+                          {e.ipAddress ? `${e.ipAddress} · ` : ""}
                           {e.device} · {timeAgo(e.createdAt)}
                         </span>
                       </div>

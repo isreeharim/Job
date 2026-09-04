@@ -793,15 +793,15 @@ export default function AdminPage() {
 
           {/* ── TAB 2: LIVE WORLD MAP ── */}
           {telemetryTab === "map" && (
-            <div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
+            <div className="adminMapTabSection">
+              <div className="adminMapTabHeader">
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span className="liveDot" style={{ background: "var(--amber)", boxShadow: "0 0 8px var(--amber)" }} />
-                  <h3 style={{ fontSize: 14, fontWeight: 700, margin: 0, color: "var(--ink)", letterSpacing: 0.6, textTransform: "uppercase", fontFamily: "var(--font-display), sans-serif" }}>
+                  <h3 className="adminMapTabTitle">
                     Global Audience Telemetry (Live Interactive World Map)
                   </h3>
                 </div>
-                <span style={{ fontSize: 11.5, color: "var(--ink-dim)" }}>
+                <span className="adminMapTabSub">
                   Real-time edge visitor locations · Pulsing radar beacons across all continents
                 </span>
               </div>

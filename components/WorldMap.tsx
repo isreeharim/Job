@@ -57,6 +57,8 @@ export function WorldMap({ countries, locations, activeCount = 0 }: WorldMapProp
   const [zoomLevel, setZoomLevel] = useState<number>(2);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPinId, setSelectedPinId] = useState<string | null>(null);
+  const [mobileTab, setMobileTab] = useState<"map" | "list">("map");
+  const [showMobileDrawer, setShowMobileDrawer] = useState(false);
 
   const totalVisitors = useMemo(() => {
     const sum = countries.reduce((acc, c) => acc + c.count, 0);
@@ -195,7 +197,9 @@ export function WorldMap({ countries, locations, activeCount = 0 }: WorldMapProp
         marker.bindPopup(popupDiv, {
           closeButton: true,
           className: "realMapCustomPopup",
-          maxWidth: 320,
+          maxWidth: 290,
+          autoPan: true,
+          autoPanPadding: [12, 12],
         });
 
         marker.on("click", () => {
@@ -229,6 +233,8 @@ export function WorldMap({ countries, locations, activeCount = 0 }: WorldMapProp
         zoomControl: false,
         attributionControl: false,
         worldCopyJump: true,
+        touchZoom: true,
+        dragging: true,
       });
 
       mapInstanceRef.current = map;
@@ -310,6 +316,30 @@ export function WorldMap({ countries, locations, activeCount = 0 }: WorldMapProp
     }
   }, [mapPins, updateMarkers]);
 
+  // Keep map properly rendered and sized during viewport resize / orientation change
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+    const observer = new ResizeObserver(() => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    });
+    observer.observe(mapContainerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  // Mobile segmented view switcher handler
+  const handleMobileTabChange = (tab: "map" | "list") => {
+    setMobileTab(tab);
+    if (tab === "map") {
+      setTimeout(() => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.invalidateSize();
+        }
+      }, 150);
+    }
+  };
+
   // Layer switcher handler
   const handleLayerSwitch = (layerName: "dark" | "satellite" | "street") => {
     const map = mapInstanceRef.current;
@@ -347,6 +377,7 @@ export function WorldMap({ countries, locations, activeCount = 0 }: WorldMapProp
   // Toggle fullscreen mode
   const handleToggleFullscreen = () => {
     setIsFullscreen((prev) => !prev);
+    setShowMobileDrawer(false);
     setTimeout(() => {
       if (mapInstanceRef.current) {
         mapInstanceRef.current.invalidateSize();
@@ -361,6 +392,22 @@ export function WorldMap({ countries, locations, activeCount = 0 }: WorldMapProp
     const map = mapInstanceRef.current;
     if (!pin || !map) return;
 
+    // Switch to map view if currently viewing the list tab on mobile
+    if (mobileTab === "list") {
+      setMobileTab("map");
+      setTimeout(() => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.invalidateSize();
+        }
+      }, 150);
+    }
+    setShowMobileDrawer(false);
+
+    // Smoothly scroll map container into view on mobile
+    if (wrapperRef.current && typeof window !== "undefined" && window.innerWidth <= 768) {
+      wrapperRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
     map.flyTo([pin.lat, pin.lng], 7, { duration: 1.4 });
 
     const marker = markersMapRef.current.get(countryCode) || markersMapRef.current.get(pin.id);
@@ -374,71 +421,108 @@ export function WorldMap({ countries, locations, activeCount = 0 }: WorldMapProp
   return (
     <div
       ref={wrapperRef}
-      className={`realMapContainer ${isFullscreen ? "realMapFullscreen" : ""}`}
+      className={`realMapContainer ${isFullscreen ? "realMapFullscreen" : ""} ${
+        showMobileDrawer ? "drawerOpen" : ""
+      }`}
+      data-mobile-view={mobileTab}
     >
+      {/* ── Mobile-Only Segmented Navigation Bar ── */}
+      <div className="realMapMobileNav">
+        <button
+          type="button"
+          className={`realMapMobileTab ${mobileTab === "map" ? "active" : ""}`}
+          onClick={() => handleMobileTabChange("map")}
+        >
+          <span>🗺️ Live Map</span>
+        </button>
+        <button
+          type="button"
+          className={`realMapMobileTab ${mobileTab === "list" ? "active" : ""}`}
+          onClick={() => handleMobileTabChange("list")}
+        >
+          <span>📋 Hotspots ({countries.length})</span>
+        </button>
+      </div>
+
       {/* ── Main Real Map Display Canvas ── */}
       <div className="realMapCanvasWrapper">
         {/* Leaflet Map Div */}
         <div ref={mapContainerRef} className="realMapElement" />
 
-        {/* Top Floating Telemetry Header Badge */}
-        <div className="realMapOverlayBadge">
-          <span className="liveDot" style={{ width: 7, height: 7 }} />
-          <span>
-            {activeCount || totalVisitors} Active Viewers Across {countries.length}{" "}
-            {countries.length === 1 ? "Country" : "Countries"}
-          </span>
-        </div>
-
-        {/* Top-Right Tactical Controls Bar */}
-        <div className="realMapTacticalBar">
-          {/* Layer switcher */}
-          <div className="realMapLayerToggle">
-            <button
-              type="button"
-              className={`realMapLayerBtn ${activeLayer === "dark" ? "active" : ""}`}
-              onClick={() => handleLayerSwitch("dark")}
-              title="Tactical Dark Basemap"
-            >
-              🌙 Dark
-            </button>
-            <button
-              type="button"
-              className={`realMapLayerBtn ${activeLayer === "satellite" ? "active" : ""}`}
-              onClick={() => handleLayerSwitch("satellite")}
-              title="Esri Satellite Imagery"
-            >
-              🛰️ Satellite
-            </button>
-            <button
-              type="button"
-              className={`realMapLayerBtn ${activeLayer === "street" ? "active" : ""}`}
-              onClick={() => handleLayerSwitch("street")}
-              title="Detailed Street &amp; Physical Map"
-            >
-              🗺️ Street
-            </button>
+        {/* Unified Top Control Overlay (Badge + Tactical Bar) */}
+        <div className="realMapTopBar">
+          {/* Telemetry Header Badge */}
+          <div className="realMapOverlayBadge">
+            <span className="liveDot" style={{ width: 7, height: 7 }} />
+            <span className="badgeDesktopText">
+              {activeCount || totalVisitors} Active Viewers Across {countries.length}{" "}
+              {countries.length === 1 ? "Country" : "Countries"}
+            </span>
+            <span className="badgeMobileText">
+              {activeCount || totalVisitors} Live · {countries.length} {countries.length === 1 ? "Region" : "Regions"}
+            </span>
           </div>
 
-          {/* Reset World button */}
-          <button
-            type="button"
-            className="realMapActionBtn"
-            onClick={handleResetWorldView}
-            title="Reset to global world view"
-          >
-            🌍 Reset View
-          </button>
+          {/* Tactical Controls Bar */}
+          <div className="realMapTacticalBar">
+            {/* Layer switcher */}
+            <div className="realMapLayerToggle">
+              <button
+                type="button"
+                className={`realMapLayerBtn ${activeLayer === "dark" ? "active" : ""}`}
+                onClick={() => handleLayerSwitch("dark")}
+                title="Tactical Dark Basemap"
+                aria-label="Dark Basemap"
+              >
+                <span className="layerBtnIcon">🌙</span>
+                <span className="layerBtnText">Dark</span>
+              </button>
+              <button
+                type="button"
+                className={`realMapLayerBtn ${activeLayer === "satellite" ? "active" : ""}`}
+                onClick={() => handleLayerSwitch("satellite")}
+                title="Esri Satellite Imagery"
+                aria-label="Satellite Imagery"
+              >
+                <span className="layerBtnIcon">🛰️</span>
+                <span className="layerBtnText">Sat</span>
+              </button>
+              <button
+                type="button"
+                className={`realMapLayerBtn ${activeLayer === "street" ? "active" : ""}`}
+                onClick={() => handleLayerSwitch("street")}
+                title="Detailed Street &amp; Physical Map"
+                aria-label="Street Map"
+              >
+                <span className="layerBtnIcon">🗺️</span>
+                <span className="layerBtnText">Street</span>
+              </button>
+            </div>
 
-          {/* Fullscreen button */}
-          <button
-            type="button"
-            className="realMapActionBtn"
-            onClick={handleToggleFullscreen}
-            title={isFullscreen ? "Exit Fullscreen" : "Expand to Fullscreen"}
-          >
-            {isFullscreen ? "✕ Exit Fullscreen" : "⛶ Fullscreen"}
-          </button>
+            {/* Reset World button */}
+            <button
+              type="button"
+              className="realMapActionBtn"
+              onClick={handleResetWorldView}
+              title="Reset to global world view"
+              aria-label="Reset to global world view"
+            >
+              <span>🌍</span>
+              <span className="actionBtnText">Reset</span>
+            </button>
+
+            {/* Fullscreen button */}
+            <button
+              type="button"
+              className="realMapActionBtn"
+              onClick={handleToggleFullscreen}
+              title={isFullscreen ? "Exit Fullscreen" : "Expand to Fullscreen"}
+              aria-label={isFullscreen ? "Exit Fullscreen" : "Expand to Fullscreen"}
+            >
+              <span>{isFullscreen ? "✕" : "⛶"}</span>
+              <span className="actionBtnText">{isFullscreen ? "Exit" : "Expand"}</span>
+            </button>
+          </div>
         </div>
 
         {/* Custom Zoom Controls (bottom-right) */}
@@ -465,16 +549,16 @@ export function WorldMap({ countries, locations, activeCount = 0 }: WorldMapProp
 
         {/* Tactical Coordinates HUD (bottom-left) */}
         <div className="realMapHud">
-          <span className="hudItem">
+          <span className="hudItem hudLat">
             <strong>LAT:</strong>{" "}
             {cursorCoords ? `${Math.abs(cursorCoords.lat).toFixed(4)}°${cursorCoords.lat >= 0 ? "N" : "S"}` : "––––"}
           </span>
-          <span className="hudDivider">|</span>
-          <span className="hudItem">
+          <span className="hudDivider hudDividerLat">|</span>
+          <span className="hudItem hudLng">
             <strong>LNG:</strong>{" "}
             {cursorCoords ? `${Math.abs(cursorCoords.lng).toFixed(4)}°${cursorCoords.lng >= 0 ? "E" : "W"}` : "––––"}
           </span>
-          <span className="hudDivider">|</span>
+          <span className="hudDivider hudDividerLng">|</span>
           <span className="hudItem">
             <strong>ZOOM:</strong> {zoomLevel}x
           </span>
@@ -484,6 +568,18 @@ export function WorldMap({ countries, locations, activeCount = 0 }: WorldMapProp
             GPS REAL-TIME GIS
           </span>
         </div>
+
+        {/* Floating Mobile Drawer Trigger in Fullscreen Mode */}
+        {isFullscreen && (
+          <button
+            type="button"
+            className="realMapFullscreenMobileDrawerBtn"
+            onClick={() => setShowMobileDrawer((prev) => !prev)}
+            aria-label="Toggle Hotspots List"
+          >
+            {showMobileDrawer ? "✕ Close List" : `📋 Hotspots (${countries.length})`}
+          </button>
+        )}
       </div>
 
       {/* ── Right-Side Live Hotspot Sidebar ── */}
@@ -497,9 +593,21 @@ export function WorldMap({ countries, locations, activeCount = 0 }: WorldMapProp
               Active Telemetry Hotspots
             </h4>
           </div>
-          <span style={{ fontSize: 11, color: "var(--teal)", fontWeight: 700 }}>
-            {countries.length} {countries.length === 1 ? "Region" : "Regions"}
-          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 11, color: "var(--teal)", fontWeight: 700 }}>
+              {countries.length} {countries.length === 1 ? "Region" : "Regions"}
+            </span>
+            {isFullscreen && showMobileDrawer && (
+              <button
+                type="button"
+                className="realMapDrawerCloseBtn"
+                onClick={() => setShowMobileDrawer(false)}
+                aria-label="Close regions drawer"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Search filter for countries/cities */}

@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { SpotlightCard } from "@/components/reactbits/SpotlightCard";
-import { DottedGlobe } from "@/components/DottedGlobe";
+import { WorldMap } from "@/components/WorldMap";
 import { getCountryGeo } from "@/lib/country-coords";
 
 export type LiveSessionItem = {
@@ -91,7 +91,7 @@ export default function AdminPage() {
   const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
 
   // Telemetry Tab state
-  const [telemetryTab, setTelemetryTab] = useState<"ips" | "globe" | "stream">("ips");
+  const [telemetryTab, setTelemetryTab] = useState<"ips" | "map" | "stream">("ips");
   const [ipViewMode, setIpViewMode] = useState<"all" | "live">("all");
   const [ipSearch, setIpSearch] = useState("");
   const [copiedIp, setCopiedIp] = useState<string | null>(null);
@@ -537,10 +537,10 @@ export default function AdminPage() {
 
               <button
                 type="button"
-                className={`telemetryTabBtn ${telemetryTab === "globe" ? "active" : ""}`}
-                onClick={() => setTelemetryTab("globe")}
+                className={`telemetryTabBtn ${telemetryTab === "map" ? "active" : ""}`}
+                onClick={() => setTelemetryTab("map")}
               >
-                <span>3D Dotted Globe</span>
+                <span>🗺️ Live World Map</span>
               </button>
 
               <button
@@ -729,22 +729,22 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* ── TAB 2: 3D DOTTED GLOBE ── */}
-          {telemetryTab === "globe" && (
+          {/* ── TAB 2: LIVE WORLD MAP ── */}
+          {telemetryTab === "map" && (
             <div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span className="liveDot" style={{ background: "var(--amber)", boxShadow: "0 0 8px var(--amber)" }} />
                   <h3 style={{ fontSize: 14, fontWeight: 700, margin: 0, color: "var(--ink)", letterSpacing: 0.6, textTransform: "uppercase", fontFamily: "var(--font-display), sans-serif" }}>
-                    Global Audience Telemetry (Interactive 3D Dotted Globe)
+                    Global Audience Telemetry (Live Interactive World Map)
                   </h3>
                 </div>
                 <span style={{ fontSize: 11.5, color: "var(--ink-dim)" }}>
-                  Drag globe to rotate · Real-time edge IP mapping
+                  Real-time edge visitor locations · Pulsing radar beacons across all continents
                 </span>
               </div>
 
-              <DottedGlobe
+              <WorldMap
                 countries={live?.topCountries || []}
                 activeCount={live?.liveVisitors || 0}
               />

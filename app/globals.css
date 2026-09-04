@@ -2204,7 +2204,359 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
   }
 }
 
-/* ── Dotted 3D Globe Telemetry Visualization ── */
+/* ── Interactive 2D World Map Telemetry Visualization ── */
+.worldMapContainer {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+  background: rgba(12, 16, 22, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 20px;
+  margin-top: 16px;
+  overflow: hidden;
+  align-items: stretch;
+}
+.worldMapCanvasWrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-radius: 10px;
+  background: #0a0e14;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+.worldMapSvgContainer {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.worldMapSvg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.5));
+}
+.continentPath {
+  transition: all 0.25s ease;
+  cursor: default;
+}
+.continentPath:hover {
+  fill: #253342;
+  stroke: var(--teal);
+}
+
+/* Radar pulse animation for visitor pins */
+@keyframes mapRadarPulse {
+  0% {
+    r: 4;
+    opacity: 0.9;
+    stroke-width: 2;
+  }
+  50% {
+    opacity: 0.4;
+    stroke-width: 1.2;
+  }
+  100% {
+    r: 22;
+    opacity: 0;
+    stroke-width: 0.4;
+  }
+}
+@keyframes mapRadarSecondary {
+  0% {
+    r: 3;
+    opacity: 0.7;
+    stroke-width: 1.5;
+  }
+  100% {
+    r: 13;
+    opacity: 0;
+    stroke-width: 0.5;
+  }
+}
+.radarPulseCircle {
+  animation: mapRadarPulse 2.4s cubic-bezier(0.2, 0.6, 0.35, 1) infinite;
+  transform-origin: center;
+}
+.radarPulseSecondary {
+  animation: mapRadarSecondary 2.4s cubic-bezier(0.2, 0.6, 0.35, 1) 0.6s infinite;
+  transform-origin: center;
+}
+.mapPinGroup {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.mapPinGroup:hover,
+.mapPinGroup.activePin {
+  transform-origin: center;
+}
+
+/* Floating Tooltip Card over Pin */
+.worldMapTooltipCard {
+  position: absolute;
+  transform: translate(-50%, -120%);
+  background: rgba(14, 18, 25, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--amber);
+  border-radius: 8px;
+  padding: 8px 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 15px rgba(244, 185, 66, 0.2);
+  pointer-events: none;
+  z-index: 20;
+  min-width: 150px;
+  animation: tooltipFloat 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes tooltipFloat {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -105%) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -120%) scale(1);
+  }
+}
+.tooltipHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.tooltipFlag {
+  font-size: 16px;
+}
+.tooltipMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  margin-bottom: 2px;
+}
+.tooltipLiveCount {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--teal);
+  font-weight: 700;
+}
+.tooltipShare {
+  color: var(--amber);
+  font-weight: 600;
+}
+.tooltipCoords {
+  font-size: 9.5px;
+  color: var(--ink-dim);
+  font-family: ui-monospace, monospace;
+}
+
+/* Overlay & Hint text */
+.worldMapOverlayBadge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  background: rgba(16, 21, 28, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink);
+  backdrop-filter: blur(8px);
+  z-index: 10;
+  pointer-events: none;
+}
+.worldMapHintText {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.3);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+.worldMapClearBtn {
+  background: none;
+  border: none;
+  color: var(--amber);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+}
+.worldMapClearBtn:hover {
+  text-decoration: underline;
+}
+
+/* Sidebar */
+.worldMapCountrySidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  max-height: 480px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  padding: 14px;
+}
+.worldMapCountryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--hairline);
+}
+.worldMapSearchWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.worldMapSearchInput {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: var(--ink);
+  font-size: 11.5px;
+  outline: none;
+  font-family: inherit;
+}
+.worldMapSearchInput:focus {
+  border-color: var(--amber);
+}
+.worldMapSearchClear {
+  position: absolute;
+  right: 6px;
+  background: none;
+  border: none;
+  color: var(--ink-dim);
+  font-size: 10.5px;
+  cursor: pointer;
+}
+.worldMapCountryList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  flex: 1;
+  padding-right: 4px;
+}
+.worldMapCountryItem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+  font-family: inherit;
+  width: 100%;
+}
+.worldMapCountryItem:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateX(2px);
+}
+.worldMapCountryItem.selected {
+  background: rgba(244, 185, 66, 0.12);
+  border-color: rgba(244, 185, 66, 0.35);
+}
+.worldMapCountryItem.selected .worldMapItemName {
+  color: var(--amber);
+}
+.worldMapItemTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.worldMapItemLeft {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+}
+.worldMapItemRank {
+  font-size: 10px;
+  color: var(--ink-dim);
+  font-weight: 700;
+  width: 18px;
+}
+.worldMapItemFlag {
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.worldMapItemName {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.worldMapItemCount {
+  font-size: 11px;
+  color: var(--teal);
+  background: rgba(63, 168, 143, 0.12);
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.worldMapItemBarBg {
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.worldMapItemBarFill {
+  height: 100%;
+  background: var(--amber);
+  border-radius: inherit;
+  transition: width 0.3s ease;
+}
+
+@media(max-width: 900px) {
+  .worldMapContainer {
+    grid-template-columns: 1fr;
+  }
+  .worldMapCountrySidebar {
+    max-height: 280px;
+  }
+}
+@media(max-width: 600px) {
+  .worldMapContainer {
+    padding: 12px;
+  }
+  .worldMapOverlayBadge {
+    font-size: 10px;
+    padding: 4px 8px;
+  }
+  .worldMapHintText {
+    font-size: 10px;
+    padding: 6px 10px;
+  }
+}
+
+/* ── Dotted 3D Globe Telemetry Visualization (Legacy/Fallback) ── */
 .dottedGlobeContainer{
   display:grid;
   grid-template-columns:1fr 340px;

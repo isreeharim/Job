@@ -1,10 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabase, supabaseAdmin } from "@/lib/supabase";
+import { verifyAdminRequest } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!verifyAdminRequest(req)) {
+    return NextResponse.json({ error: "Unauthorized admin access" }, { status: 401 });
+  }
+
   const client = supabaseAdmin || supabase;
   if (!client) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 500 });

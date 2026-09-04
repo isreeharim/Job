@@ -51,6 +51,7 @@ export default function AdminPage() {
   // Login form state
   const [emailInput, setEmailInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loggingIn, setLoggingIn] = useState(false);
 
@@ -115,12 +116,12 @@ export default function AdminPage() {
       const res = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: emailInput, password: passwordInput }),
+        body: JSON.stringify({ email: emailInput.trim(), password: passwordInput }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Login failed");
+        throw new Error(data.error || "Invalid authentication credentials");
       }
 
       setAuthenticated(true);
@@ -168,9 +169,26 @@ export default function AdminPage() {
   if (authenticated === null) {
     return (
       <main className="adminShell">
-        <div className="adminAuthBox">
-          <p className="eyebrow">SECURITY CHECK</p>
-          <h2>Verifying credentials…</h2>
+        <div className="adminLoginWrap">
+          <div className="adminLoginBackdropGlow" />
+          <div className="adminAuthCard" style={{ textAlign: "center" }}>
+            <div className="adminLoadingCard">
+              <div className="adminRadarPulse">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </div>
+              <div>
+                <p className="eyebrow" style={{ margin: "0 0 6px", color: "var(--amber)" }}>
+                  INITIALIZING GATEWAY
+                </p>
+                <h2 style={{ fontSize: 18, margin: 0, color: "var(--ink)", fontWeight: 700 }}>
+                  Verifying Session Security…
+                </h2>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
     );
@@ -180,57 +198,150 @@ export default function AdminPage() {
   if (!authenticated) {
     return (
       <main className="adminShell">
-        <div className="adminAuthBox">
+        <div className="adminLoginWrap">
+          <div className="adminLoginBackdropGlow" />
+
           <SpotlightCard
-            className="authCard"
-            spotlightColor="rgba(244, 185, 66, 0.08)"
-            borderHoverColor="var(--amber)"
+            className="adminAuthCard"
+            spotlightColor="rgba(244, 185, 66, 0.12)"
+            borderHoverColor="rgba(244, 185, 66, 0.4)"
           >
-            <div className="authHeader">
-              <span className="kicker">RESTRICTED ACCESS</span>
-              <h1>Mission Control</h1>
-              <p className="authSubtitle">Authorized administration & telemetry access only.</p>
+            {/* Header Icon & Security Pill */}
+            <div className="adminShieldIconWrap">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                <circle cx="12" cy="16" r="1" fill="currentColor" />
+              </svg>
             </div>
 
-            {loginError && <div className="authBanner authBannerError">{loginError}</div>}
+            <div className="adminBadgeRow">
+              <span className="adminStatusPill">
+                <span className="adminStatusDot" />
+                Mission Control Gateway
+              </span>
+            </div>
 
-            <form onSubmit={handleLogin} className="authForm">
-              <div className="field">
-                <label htmlFor="admin-email">Admin Email</label>
-                <input
-                  id="admin-email"
-                  type="email"
-                  required
-                  placeholder="admin@remoteflow.site"
-                  value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
-                  disabled={loggingIn}
-                  autoComplete="username"
-                />
+            <div className="adminAuthHeader">
+              <h1 className="adminAuthTitle">Superuser Console</h1>
+              <p className="adminAuthSubtitle">
+                Restricted access for telemetry analytics and platform operations.
+              </p>
+            </div>
+
+            {loginError && (
+              <div className="adminErrorBanner" role="alert">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                <span>{loginError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleLogin} autoComplete="on">
+              {/* Email Field */}
+              <div className="adminInputGroup">
+                <label className="adminLabel" htmlFor="admin-email">
+                  <span>Admin Identity</span>
+                  <span style={{ fontSize: 11, color: "var(--ink-dim)" }}>Authorized email</span>
+                </label>
+                <div className="adminInputWrap">
+                  <span className="adminInputIcon">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                      <polyline points="22,6 12,13 2,6" />
+                    </svg>
+                  </span>
+                  <input
+                    id="admin-email"
+                    type="email"
+                    required
+                    autoFocus
+                    className="adminInput"
+                    placeholder="sreehari... @gmail.com"
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    disabled={loggingIn}
+                    autoComplete="username"
+                  />
+                </div>
               </div>
 
-              <div className="field">
-                <label htmlFor="admin-password">Admin Password</label>
-                <input
-                  id="admin-password"
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  value={passwordInput}
-                  onChange={(e) => setPasswordInput(e.target.value)}
-                  disabled={loggingIn}
-                  autoComplete="current-password"
-                />
+              {/* Password Field */}
+              <div className="adminInputGroup">
+                <label className="adminLabel" htmlFor="admin-password">
+                  <span>Security Passcode</span>
+                  <span style={{ fontSize: 11, color: "var(--ink-dim)" }}>HMAC Protected</span>
+                </label>
+                <div className="adminInputWrap">
+                  <span className="adminInputIcon">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                  </span>
+                  <input
+                    id="admin-password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    className="adminInput"
+                    placeholder="Enter admin passcode"
+                    value={passwordInput}
+                    onChange={(e) => setPasswordInput(e.target.value)}
+                    disabled={loggingIn}
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    className="adminPasswordToggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Hide passcode" : "Show passcode"}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? (
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                        <line x1="1" y1="1" x2="23" y2="23" />
+                      </svg>
+                    ) : (
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
 
-              <button type="submit" className="authSubmitBtn" disabled={loggingIn}>
-                {loggingIn ? "Authenticating…" : "Authorize Session →"}
+              {/* Submit Action */}
+              <button type="submit" className="adminSubmitBtn" disabled={loggingIn}>
+                {loggingIn ? (
+                  <>
+                    <svg className="adminSpinner" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.25" />
+                      <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeLinecap="round" />
+                    </svg>
+                    <span>Authenticating…</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Unlock Mission Control</span>
+                    <span style={{ fontSize: 16 }}>→</span>
+                  </>
+                )}
               </button>
 
-              <div style={{ textAlign: "center", marginTop: 14 }}>
-                <Link href="/" className="authFooterBtn" style={{ color: "var(--ink-dim)" }}>
-                  ← Return to public board
+              {/* Footer navigation */}
+              <div className="adminFooterLinks">
+                <Link href="/" className="adminBackLink">
+                  <span>←</span>
+                  <span>Return to RemoteFlow Job Board</span>
                 </Link>
+                <div className="adminSecurityNotice">
+                  TLS 1.3 · 256-BIT ENCRYPTION · DIRECT ACCESS ONLY
+                </div>
               </div>
             </form>
           </SpotlightCard>

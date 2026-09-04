@@ -1615,16 +1615,304 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
   }
 }
 
-/* ── Admin Mission Control Styles ── */
+/* ── Admin Mission Control & Login UI/UX ── */
 .adminShell{
   min-height:100vh;
   padding:24px 20px 80px;
   background:var(--bg);
 }
-.adminAuthBox{
-  max-width:440px;
-  margin:60px auto;
+.adminLoginWrap{
+  min-height:calc(88vh - 40px);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:20px 16px;
+  position:relative;
 }
+.adminLoginBackdropGlow{
+  position:absolute;
+  width:520px;
+  height:520px;
+  background:radial-gradient(circle, rgba(244, 185, 66, 0.08) 0%, rgba(63, 168, 143, 0.03) 50%, transparent 70%);
+  top:50%;
+  left:50%;
+  transform:translate(-50%, -50%);
+  pointer-events:none;
+  z-index:0;
+}
+.adminAuthCard{
+  position:relative;
+  z-index:1;
+  width:100%;
+  max-width:440px;
+  background:rgba(20, 22, 27, 0.85);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border:1px solid rgba(255, 255, 255, 0.09);
+  border-radius:20px;
+  padding:36px 32px;
+  box-shadow:0 24px 64px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+.adminShieldIconWrap{
+  width:54px;
+  height:54px;
+  margin:0 auto 16px;
+  border-radius:16px;
+  background:linear-gradient(135deg, rgba(244, 185, 66, 0.16), rgba(244, 185, 66, 0.04));
+  border:1px solid rgba(244, 185, 66, 0.35);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--amber);
+  box-shadow:0 0 24px rgba(244, 185, 66, 0.18);
+}
+.adminBadgeRow{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  margin-bottom:12px;
+}
+.adminStatusPill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:3.5px 12px;
+  border-radius:999px;
+  background:rgba(244, 185, 66, 0.09);
+  border:1px solid rgba(244, 185, 66, 0.25);
+  font-size:10.5px;
+  font-weight:700;
+  letter-spacing:1.2px;
+  color:var(--amber);
+  text-transform:uppercase;
+  font-family:var(--font-display), monospace, sans-serif;
+}
+.adminStatusDot{
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:var(--amber);
+  box-shadow:0 0 8px var(--amber);
+  animation:pulseLive 2s infinite ease-in-out;
+}
+.adminAuthHeader{
+  text-align:center;
+  margin-bottom:24px;
+}
+.adminAuthTitle{
+  font-family:var(--font-display), sans-serif;
+  font-size:26px;
+  font-weight:800;
+  color:var(--ink);
+  letter-spacing:.3px;
+  margin:0 0 6px 0;
+}
+.adminAuthSubtitle{
+  font-size:13px;
+  color:var(--ink-dim);
+  line-height:1.45;
+  margin:0;
+}
+.adminErrorBanner{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  padding:12px 14px;
+  border-radius:10px;
+  background:rgba(239, 125, 125, 0.12);
+  border:1px solid rgba(239, 125, 125, 0.35);
+  color:#ff9090;
+  font-size:12.5px;
+  line-height:1.4;
+  margin-bottom:20px;
+  animation:adminShake 0.4s ease-in-out;
+}
+.adminErrorBanner svg{
+  flex-shrink:0;
+  margin-top:2px;
+}
+@keyframes adminShake{
+  0%, 100%{transform:translateX(0)}
+  20%, 60%{transform:translateX(-5px)}
+  40%, 80%{transform:translateX(5px)}
+}
+.adminInputGroup{
+  margin-bottom:18px;
+}
+.adminLabel{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  font-size:12px;
+  font-weight:600;
+  color:var(--ink);
+  margin-bottom:7px;
+  letter-spacing:.3px;
+}
+.adminInputWrap{
+  position:relative;
+  display:flex;
+  align-items:center;
+}
+.adminInputIcon{
+  position:absolute;
+  left:14px;
+  color:var(--ink-dim);
+  pointer-events:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:color .15s ease;
+}
+.adminInputWrap:focus-within .adminInputIcon{
+  color:var(--amber);
+}
+.adminInput{
+  width:100%;
+  background:rgba(12, 13, 16, 0.75);
+  border:1px solid rgba(255, 255, 255, 0.1);
+  border-radius:10px;
+  padding:12px 14px 12px 42px;
+  color:var(--ink);
+  font-size:14px;
+  font-family:inherit;
+  transition:all .15s ease;
+}
+.adminInput:focus{
+  outline:none;
+  border-color:var(--amber);
+  box-shadow:0 0 0 3px rgba(244, 185, 66, 0.15);
+  background:rgba(12, 13, 16, 0.95);
+}
+.adminInput::placeholder{
+  color:rgba(255, 255, 255, 0.28);
+}
+.adminInput:disabled{
+  opacity:.5;
+  cursor:not-allowed;
+}
+.adminPasswordToggle{
+  position:absolute;
+  right:10px;
+  background:none;
+  border:none;
+  color:var(--ink-dim);
+  padding:6px 8px;
+  border-radius:6px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:color .15s ease, background .15s ease;
+}
+.adminPasswordToggle:hover{
+  color:var(--ink);
+  background:rgba(255, 255, 255, 0.06);
+}
+.adminSubmitBtn{
+  width:100%;
+  padding:13px;
+  background:linear-gradient(135deg, #f4b942, #e09f25);
+  color:#121316;
+  border:none;
+  border-radius:10px;
+  font-size:14px;
+  font-weight:700;
+  letter-spacing:.3px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  box-shadow:0 4px 16px rgba(244, 185, 66, 0.25);
+  transition:all .15s ease;
+  margin-top:6px;
+  font-family:var(--font-body), sans-serif;
+}
+.adminSubmitBtn:hover:not(:disabled){
+  transform:translateY(-1px);
+  box-shadow:0 6px 22px rgba(244, 185, 66, 0.35);
+}
+.adminSubmitBtn:active:not(:disabled){
+  transform:translateY(0);
+}
+.adminSubmitBtn:disabled{
+  opacity:.6;
+  cursor:not-allowed;
+  transform:none;
+}
+.adminSpinner{
+  animation:adminSpin 0.8s linear infinite;
+}
+@keyframes adminSpin{
+  100%{transform:rotate(360deg)}
+}
+.adminFooterLinks{
+  margin-top:22px;
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:12px;
+}
+.adminBackLink{
+  color:var(--ink-dim);
+  font-size:12.5px;
+  text-decoration:none;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  transition:color .15s ease;
+}
+.adminBackLink:hover{
+  color:var(--ink);
+}
+.adminSecurityNotice{
+  font-size:10.5px;
+  color:rgba(255, 255, 255, 0.28);
+  letter-spacing:.6px;
+  font-family:monospace;
+  text-transform:uppercase;
+}
+
+/* ── Loading Radar ── */
+.adminLoadingCard{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:16px;
+  padding:48px 24px;
+  text-align:center;
+}
+.adminRadarPulse{
+  width:58px;
+  height:58px;
+  border-radius:50%;
+  border:2px solid rgba(244, 185, 66, 0.35);
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--amber);
+}
+.adminRadarPulse::after{
+  content:'';
+  position:absolute;
+  inset:-8px;
+  border-radius:50%;
+  border:1.5px solid var(--amber);
+  opacity:0;
+  animation:radarPing 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes radarPing{
+  0%{transform:scale(.8);opacity:1}
+  100%{transform:scale(1.8);opacity:0}
+}
+
+/* ── Dashboard Styles ── */
 .adminDashboard{
   max-width:1100px;
   margin:0 auto;
@@ -1650,11 +1938,12 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
   font-size:10px;
   font-weight:800;
   letter-spacing:1px;
-  padding:2px 6px;
+  padding:2px 8px;
   border-radius:4px;
   background:rgba(244, 185, 66, 0.15);
   color:var(--amber);
   border:1px solid rgba(244, 185, 66, 0.3);
+  font-family:monospace;
 }
 .adminUserGroup{
   display:flex;
@@ -1667,18 +1956,20 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
   font-family:monospace;
 }
 .adminLogoutBtn{
-  padding:6px 12px;
+  padding:6px 14px;
   background:rgba(255, 255, 255, 0.04);
   border:1px solid var(--hairline);
   border-radius:6px;
   color:var(--ink-dim);
   font-size:12px;
+  font-weight:600;
   cursor:pointer;
   transition:all .15s ease;
 }
 .adminLogoutBtn:hover{
-  background:rgba(255, 255, 255, 0.08);
-  color:var(--ink);
+  background:rgba(239, 125, 125, 0.12);
+  border-color:rgba(239, 125, 125, 0.35);
+  color:#ff9090;
 }
 .adminSection{
   background:var(--panel);
@@ -1722,6 +2013,9 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
   .adminHeader{
     flex-direction:column;
     align-items:flex-start;
+  }
+  .adminAuthCard{
+    padding:28px 20px;
   }
 }
 

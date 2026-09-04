@@ -8,8 +8,18 @@ export interface VisitorCountry {
   count: number;
 }
 
+export interface VisitorLocation {
+  city?: string;
+  region?: string;
+  country: string;
+  lat?: number | null;
+  lng?: number | null;
+  count: number;
+}
+
 interface WorldMapProps {
   countries: VisitorCountry[];
+  locations?: VisitorLocation[];
   activeCount?: number;
 }
 
@@ -18,20 +28,62 @@ function geoToSvg(lat: number, lng: number): { x: number; y: number } {
   const x = ((lng + 180) / 360) * 1000;
   const y = ((90 - lat) / 180) * 500;
   return {
-    x: Math.max(10, Math.min(990, x)),
-    y: Math.max(10, Math.min(490, y)),
+    x: Math.max(12, Math.min(988, x)),
+    y: Math.max(12, Math.min(488, y)),
   };
 }
 
-export function WorldMap({ countries, activeCount = 0 }: WorldMapProps) {
-  const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
-  const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
+export function WorldMap({ countries, locations, activeCount = 0 }: WorldMapProps) {
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [hoveredKey, setHoveredKey] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   const totalVisitors = useMemo(() => {
     const sum = countries.reduce((acc, c) => acc + c.count, 0);
     return Math.max(sum, activeCount, 1);
   }, [countries, activeCount]);
+
+  // Compute unified location pins (exact city coordinates when available, country fallback otherwise)
+  const mapPins = useMemo(() => {
+    if (locations && locations.length > 0) {
+      return locations.map((loc, idx) => {
+        const geo = getCountryGeo(loc.country);
+        const hasCoords = typeof loc.lat === "number" && typeof loc.lng === "number" && (loc.lat !== 0 || loc.lng !== 0);
+        const lat = hasCoords ? loc.lat! : geo.lat;
+        const lng = hasCoords ? loc.lng! : geo.lng;
+        const pos = geoToSvg(lat, lng);
+        const id = `loc_${loc.country}_${loc.city || ""}_${idx}`;
+        return {
+          id,
+          country: loc.country,
+          city: loc.city || null,
+          region: loc.region || null,
+          geo,
+          lat,
+          lng,
+          count: loc.count,
+          pos,
+        };
+      });
+    }
+
+    return countries.map((c, idx) => {
+      const geo = getCountryGeo(c.country);
+      const pos = geoToSvg(geo.lat, geo.lng);
+      const id = `country_${c.country}_${idx}`;
+      return {
+        id,
+        country: c.country,
+        city: null,
+        region: null,
+        geo,
+        lat: geo.lat,
+        lng: geo.lng,
+        count: c.count,
+        pos,
+      };
+    });
+  }, [locations, countries]);
 
   // Sort countries by visitor count descending
   const sortedCountries = useMemo(() => {
@@ -52,15 +104,13 @@ export function WorldMap({ countries, activeCount = 0 }: WorldMapProps) {
 
   // Active pin details for popup
   const activeDetail = useMemo(() => {
-    const code = selectedCountry || hoveredCountry;
-    if (!code) return null;
-    const item = countries.find((c) => c.country === code);
-    const geo = getCountryGeo(code);
-    const count = item ? item.count : 1;
-    const pct = Math.round((count / totalVisitors) * 100);
-    const pos = geoToSvg(geo.lat, geo.lng);
-    return { code, geo, count, pct, pos };
-  }, [selectedCountry, hoveredCountry, countries, totalVisitors]);
+    const key = selectedKey || hoveredKey;
+    if (!key) return null;
+    const pin = mapPins.find((p) => p.id === key || p.country === key);
+    if (!pin) return null;
+    const pct = Math.round((pin.count / totalVisitors) * 100);
+    return { ...pin, pct };
+  }, [selectedKey, hoveredKey, mapPins, totalVisitors]);
 
   return (
     <div className="worldMapContainer">
@@ -214,23 +264,26 @@ export function WorldMap({ countries, activeCount = 0 }: WorldMapProps) {
 
             {/* ── Active Visitor Geo Markers (Radar Beacons) ── */}
             <g className="mapMarkers">
-              {countries.map((c) => {
-                const geo = getCountryGeo(c.country);
-                const { x, y } = geoToSvg(geo.lat, geo.lng);
-                const isSelected = selectedCountry === c.country;
-                const isHovered = hoveredCountry === c.country;
+              {mapPins.map((pin) => {
+                const isSelected = selectedKey === pin.id || selectedKey === pin.country;
+                const isHovered = hoveredKey === pin.id || hoveredKey === pin.country;
                 const active = isSelected || isHovered;
+
+                const labelText = pin.city
+                  ? `${pin.geo.flag} ${pin.city} (${pin.count})`
+                  : `${pin.geo.flag} ${pin.country} (${pin.count})`;
+                const pillWidth = Math.max(38, labelText.length * 6 + 14);
 
                 return (
                   <g
-                    key={c.country}
+                    key={pin.id}
                     className={`mapPinGroup ${active ? "activePin" : ""}`}
-                    transform={`translate(${x}, ${y})`}
+                    transform={`translate(${pin.pos.x}, ${pin.pos.y})`}
                     onClick={() =>
-                      setSelectedCountry(selectedCountry === c.country ? null : c.country)
+                      setSelectedKey(selectedKey === pin.id ? null : pin.id)
                     }
-                    onMouseEnter={() => setHoveredCountry(c.country)}
-                    onMouseLeave={() => setHoveredCountry(null)}
+                    onMouseEnter={() => setHoveredKey(pin.id)}
+                    onMouseLeave={() => setHoveredKey(null)}
                     style={{ cursor: "pointer" }}
                   >
                     {/* Outer animated radar pulse wave */}
@@ -260,12 +313,12 @@ export function WorldMap({ countries, activeCount = 0 }: WorldMapProps) {
                       filter="url(#mapGlow)"
                     />
 
-                    {/* Country Badge Pill (Flag + Count) */}
+                    {/* Country Badge Pill (Flag + City/Country + Count) */}
                     <g transform="translate(0, -14)">
                       <rect
-                        x="-18"
+                        x={-pillWidth / 2}
                         y="-10"
-                        width="36"
+                        width={pillWidth}
                         height="14"
                         rx="4"
                         fill={active ? "rgba(244, 185, 66, 0.95)" : "rgba(16, 21, 28, 0.88)"}
@@ -276,12 +329,12 @@ export function WorldMap({ countries, activeCount = 0 }: WorldMapProps) {
                         x="0"
                         y="0"
                         textAnchor="middle"
-                        fontSize="8.5"
+                        fontSize="8"
                         fontWeight="700"
                         fill={active ? "#10151c" : "var(--ink)"}
                         style={{ userSelect: "none" }}
                       >
-                        {geo.flag} {c.count}
+                        {labelText}
                       </text>
                     </g>
                   </g>
@@ -301,7 +354,11 @@ export function WorldMap({ countries, activeCount = 0 }: WorldMapProps) {
             >
               <div className="tooltipHeader">
                 <span className="tooltipFlag">{activeDetail.geo.flag}</span>
-                <strong>{activeDetail.geo.name}</strong>
+                <strong>
+                  {activeDetail.city ? `${activeDetail.city}, ` : ""}
+                  {activeDetail.region ? `${activeDetail.region}, ` : ""}
+                  {activeDetail.geo.name}
+                </strong>
               </div>
               <div className="tooltipMeta">
                 <span className="tooltipLiveCount">
@@ -313,10 +370,10 @@ export function WorldMap({ countries, activeCount = 0 }: WorldMapProps) {
                 </span>
               </div>
               <div className="tooltipCoords">
-                {Math.abs(activeDetail.geo.lat).toFixed(1)}°
-                {activeDetail.geo.lat >= 0 ? "N" : "S"},{" "}
-                {Math.abs(activeDetail.geo.lng).toFixed(1)}°
-                {activeDetail.geo.lng >= 0 ? "E" : "W"}
+                📍 {Math.abs(activeDetail.lat).toFixed(2)}°
+                {activeDetail.lat >= 0 ? "N" : "S"},{" "}
+                {Math.abs(activeDetail.lng).toFixed(2)}°
+                {activeDetail.lng >= 0 ? "E" : "W"}
               </div>
             </div>
           )}
@@ -325,11 +382,11 @@ export function WorldMap({ countries, activeCount = 0 }: WorldMapProps) {
         {/* Bottom Hint Bar */}
         <div className="worldMapHintText">
           <span>Click any location beacon on the map or select a country to inspect</span>
-          {selectedCountry && (
+          {selectedKey && (
             <button
               type="button"
               className="worldMapClearBtn"
-              onClick={() => setSelectedCountry(null)}
+              onClick={() => setSelectedKey(null)}
             >
               Clear selection ✕
             </button>
@@ -372,7 +429,7 @@ export function WorldMap({ countries, activeCount = 0 }: WorldMapProps) {
           <div className="worldMapCountryList">
             {filteredCountries.map((c, index) => {
               const geo = getCountryGeo(c.country);
-              const isSelected = selectedCountry === c.country;
+              const isSelected = selectedKey === c.country;
               const maxCount = sortedCountries[0]?.count || 1;
               const barWidth = Math.max(12, Math.round((c.count / maxCount) * 100));
 
@@ -382,10 +439,10 @@ export function WorldMap({ countries, activeCount = 0 }: WorldMapProps) {
                   type="button"
                   className={`worldMapCountryItem ${isSelected ? "selected" : ""}`}
                   onClick={() =>
-                    setSelectedCountry(selectedCountry === c.country ? null : c.country)
+                    setSelectedKey(selectedKey === c.country ? null : c.country)
                   }
-                  onMouseEnter={() => setHoveredCountry(c.country)}
-                  onMouseLeave={() => setHoveredCountry(null)}
+                  onMouseEnter={() => setHoveredKey(c.country)}
+                  onMouseLeave={() => setHoveredKey(null)}
                   title={`Center ${geo.name} on the map`}
                 >
                   <div className="worldMapItemTop">

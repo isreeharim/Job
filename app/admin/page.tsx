@@ -11,6 +11,9 @@ export type LiveSessionItem = {
   ipAddress: string;
   country: string;
   city: string | null;
+  region?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   pathname: string;
   device: string;
   lastPingAt: string;
@@ -21,6 +24,9 @@ export type SavedIpItem = {
   ipAddress: string;
   country: string;
   city: string | null;
+  region?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   device: string;
   lastPathname: string;
   firstSeen: string;
@@ -38,6 +44,14 @@ type LiveData = {
   topActivePages: { pathname: string; count: number }[];
   devices: { mobile: number; desktop: number; tablet: number };
   topCountries: { country: string; count: number }[];
+  topLocations?: {
+    city?: string;
+    region?: string;
+    country: string;
+    lat?: number | null;
+    lng?: number | null;
+    count: number;
+  }[];
   recentEvents: {
     id: number;
     pathname: string;
@@ -110,6 +124,7 @@ export default function AdminPage() {
           item.pathname.toLowerCase().includes(q) ||
           item.country.toLowerCase().includes(q) ||
           (item.city && item.city.toLowerCase().includes(q)) ||
+          (item.region && item.region.toLowerCase().includes(q)) ||
           item.device.toLowerCase().includes(q)
       );
     } else {
@@ -121,6 +136,7 @@ export default function AdminPage() {
           item.lastPathname.toLowerCase().includes(q) ||
           item.country.toLowerCase().includes(q) ||
           (item.city && item.city.toLowerCase().includes(q)) ||
+          (item.region && item.region.toLowerCase().includes(q)) ||
           item.device.toLowerCase().includes(q)
       );
     }
@@ -137,18 +153,34 @@ export default function AdminPage() {
   const exportIpsToCsv = () => {
     const list = savedIps && savedIps.length ? savedIps : liveIps || [];
     if (!list.length) return;
-    const headers = ["IP Address", "Country", "City", "Device", "Total Views", "First Seen", "Last Seen", "Last Path"];
+    const headers = [
+      "IP Address",
+      "Country",
+      "City",
+      "Region",
+      "Latitude",
+      "Longitude",
+      "Device",
+      "Total Views",
+      "First Seen",
+      "Last Seen",
+      "Last Path",
+    ];
     const rows = list.map((item) => {
       const isSaved = "firstSeen" in item;
+      const s = item as (SavedIpItem & LiveSessionItem);
       return [
-        `"${item.ipAddress}"`,
-        `"${item.country}"`,
-        `"${item.city || ""}"`,
-        `"${item.device}"`,
-        isSaved ? (item as SavedIpItem).totalViews : 1,
-        `"${isSaved ? (item as SavedIpItem).firstSeen : (item as LiveSessionItem).lastPingAt}"`,
-        `"${isSaved ? (item as SavedIpItem).lastSeen : (item as LiveSessionItem).lastPingAt}"`,
-        `"${isSaved ? (item as SavedIpItem).lastPathname : (item as LiveSessionItem).pathname}"`,
+        `"${s.ipAddress}"`,
+        `"${s.country || ""}"`,
+        `"${s.city || ""}"`,
+        `"${s.region || ""}"`,
+        `"${typeof s.latitude === "number" ? s.latitude : ""}"`,
+        `"${typeof s.longitude === "number" ? s.longitude : ""}"`,
+        `"${s.device || ""}"`,
+        isSaved ? s.totalViews : 1,
+        `"${isSaved ? s.firstSeen : s.lastPingAt}"`,
+        `"${isSaved ? s.lastSeen : s.lastPingAt}"`,
+        `"${isSaved ? s.lastPathname : s.pathname}"`,
       ];
     });
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
@@ -674,12 +706,28 @@ export default function AdminPage() {
                               </div>
                             </td>
                             <td data-label="Location">
-                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                                 <span style={{ fontSize: 15 }}>{geo.flag}</span>
                                 <span style={{ fontWeight: 600 }}>{geo.name}</span>
                                 {v.city && (
                                   <span style={{ color: "var(--ink-dim)", fontSize: 11.5 }}>
-                                    · {v.city}
+                                    · {v.city}{v.region ? `, ${v.region}` : ""}
+                                  </span>
+                                )}
+                                {typeof v.latitude === "number" && typeof v.longitude === "number" && (v.latitude !== 0 || v.longitude !== 0) && (
+                                  <span
+                                    title={`Exact coordinates: ${v.latitude.toFixed(4)}, ${v.longitude.toFixed(4)}`}
+                                    style={{
+                                      fontSize: 10,
+                                      background: "rgba(63, 168, 143, 0.12)",
+                                      color: "var(--teal)",
+                                      padding: "1px 5px",
+                                      borderRadius: 4,
+                                      fontFamily: "monospace",
+                                      cursor: "help",
+                                    }}
+                                  >
+                                    📍 {v.latitude.toFixed(2)}°, {v.longitude.toFixed(2)}°
                                   </span>
                                 )}
                               </div>
@@ -746,6 +794,7 @@ export default function AdminPage() {
 
               <WorldMap
                 countries={live?.topCountries || []}
+                locations={live?.topLocations || []}
                 activeCount={live?.liveVisitors || 0}
               />
             </div>

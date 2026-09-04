@@ -53,13 +53,16 @@ export async function POST(req: NextRequest) {
     }
 
     const ip = getClientIp(req);
+    const loc = (typeof body.location === "object" && body.location !== null) ? body.location : {};
 
-    const country =
+    let country: string =
+      (typeof loc.countryCode === "string" && loc.countryCode.length <= 3 ? loc.countryCode.toUpperCase() : null) ||
       req.headers.get("x-vercel-ip-country") ||
       req.headers.get("cf-ipcountry") ||
       "Unknown";
 
     let city: string | null =
+      (typeof loc.city === "string" && loc.city.trim() ? loc.city.trim() : null) ||
       req.headers.get("x-vercel-ip-city") ||
       req.headers.get("cf-ipcity") ||
       null;
@@ -70,16 +73,56 @@ export async function POST(req: NextRequest) {
       } catch {}
     }
 
+    let region: string | null =
+      (typeof loc.region === "string" && loc.region.trim() ? loc.region.trim() : null) ||
+      req.headers.get("x-vercel-ip-country-region") ||
+      req.headers.get("cf-region") ||
+      null;
+
+    let latitude: number | null =
+      typeof loc.latitude === "number"
+        ? loc.latitude
+        : req.headers.get("x-vercel-ip-latitude")
+        ? parseFloat(req.headers.get("x-vercel-ip-latitude")!)
+        : null;
+
+    let longitude: number | null =
+      typeof loc.longitude === "number"
+        ? loc.longitude
+        : req.headers.get("x-vercel-ip-longitude")
+        ? parseFloat(req.headers.get("x-vercel-ip-longitude")!)
+        : null;
+
+    // Server-side IP lookup fallback if location is still missing and IP is public
+    if ((country === "Unknown" || !city || latitude === null) && ip && ip !== "127.0.0.1" && !ip.startsWith("10.") && !ip.startsWith("192.168.")) {
+      try {
+        const geoRes = await fetch(`https://ipwho.is/${ip}`, { signal: AbortSignal.timeout(1200) });
+        if (geoRes.ok) {
+          const geoData = await geoRes.json();
+          if (geoData.success !== false) {
+            if (country === "Unknown" && geoData.country_code) country = geoData.country_code;
+            if (!city && geoData.city) city = geoData.city;
+            if (!region && geoData.region) region = geoData.region;
+            if (latitude === null && typeof geoData.latitude === "number") latitude = geoData.latitude;
+            if (longitude === null && typeof geoData.longitude === "number") longitude = geoData.longitude;
+          }
+        }
+      } catch {}
+    }
+
     const userAgent = req.headers.get("user-agent");
     const device = getDevice(userAgent);
     const now = new Date().toISOString();
 
-    // 1. Upsert live session with IP address and city
+    // 1. Upsert live session with IP address and exact live location
     await client.from("live_sessions").upsert(
       {
         session_id: sessionId,
         ip_address: ip,
         city,
+        region,
+        latitude,
+        longitude,
         pathname,
         country,
         device,
@@ -119,6 +162,9 @@ export async function POST(req: NextRequest) {
           session_id: sessionId,
           ip_address: ip,
           city,
+          region,
+          latitude,
+          longitude,
           pathname,
           referrer,
           country,
@@ -128,13 +174,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 3. Save / update permanent visitor IP registry so all IPs are permanently recorded
+    // 3. Save / update permanent visitor IP registry so all IPs and locations are permanently recorded
     if (ip && ip !== "127.0.0.1") {
       try {
         await client.rpc("upsert_visitor_ip", {
           p_ip: ip,
           p_country: country,
           p_city: city,
+          p_region: region,
+          p_lat: latitude,
+          p_lon: longitude,
           p_device: device,
           p_pathname: pathname,
           p_now: now,

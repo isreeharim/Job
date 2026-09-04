@@ -34,13 +34,68 @@ function getVisitorId(): string {
   }
 }
 
+export type ClientLocation = {
+  city?: string;
+  region?: string;
+  country?: string;
+  countryCode?: string;
+  latitude?: number;
+  longitude?: number;
+  timeZone?: string;
+};
+
+async function getCachedLocation(): Promise<ClientLocation | null> {
+  if (typeof window === "undefined") return null;
+  try {
+    const cached = sessionStorage.getItem("rf_geo_location");
+    if (cached) {
+      return JSON.parse(cached);
+    }
+  } catch {}
+
+  try {
+    const res = await fetch("https://ipwho.is/", { cache: "force-cache" });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success !== false) {
+        const loc: ClientLocation = {
+          city: data.city || undefined,
+          region: data.region || undefined,
+          country: data.country || undefined,
+          countryCode: data.country_code || undefined,
+          latitude: typeof data.latitude === "number" ? data.latitude : undefined,
+          longitude: typeof data.longitude === "number" ? data.longitude : undefined,
+          timeZone: data.timezone?.id || Intl.DateTimeFormat().resolvedOptions().timeZone,
+        };
+        try {
+          sessionStorage.setItem("rf_geo_location", JSON.stringify(loc));
+        } catch {}
+        return loc;
+      }
+    }
+  } catch {}
+
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return { timeZone: tz };
+  } catch {
+    return null;
+  }
+}
+
 function TrackerInternal() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const sessionIdRef = useRef<string>("");
+  const locationRef = useRef<ClientLocation | null>(null);
 
   useEffect(() => {
     sessionIdRef.current = getVisitorId();
+    getCachedLocation().then((loc) => {
+      if (loc) {
+        locationRef.current = loc;
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -56,6 +111,7 @@ function TrackerInternal() {
           pathname: fullPath,
           referrer: isPing ? undefined : referrer,
           isPing,
+          location: locationRef.current || undefined,
         });
 
         if (typeof navigator !== "undefined" && navigator.sendBeacon && isPing) {
@@ -72,8 +128,15 @@ function TrackerInternal() {
       } catch {}
     };
 
-    // Initial pageview
-    sendPing(false);
+    // If location is not yet ready, wait briefly or send right away
+    if (!locationRef.current) {
+      getCachedLocation().then((loc) => {
+        if (loc) locationRef.current = loc;
+        sendPing(false);
+      });
+    } else {
+      sendPing(false);
+    }
 
     // Heartbeat every 25 seconds to maintain active presence
     const interval = setInterval(() => {

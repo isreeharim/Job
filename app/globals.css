@@ -1430,5 +1430,191 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
   to{opacity:1;transform:scale(1) translateY(0)}
 }
 
+/* ── Live Visitor Badge (Header) ── */
+.brandGroup{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.liveVisitorBadge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:3px 9px;
+  background:rgba(63, 168, 143, 0.1);
+  border:1px solid rgba(63, 168, 143, 0.35);
+  border-radius:20px;
+  text-decoration:none;
+  color:var(--teal);
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.3px;
+  transition:all .15s ease;
+  white-space:nowrap;
+}
+.liveVisitorBadge:hover{
+  background:rgba(63, 168, 143, 0.18);
+  border-color:var(--teal);
+  transform:translateY(-1px);
+}
+.liveDot{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:var(--teal);
+  box-shadow:0 0 6px var(--teal);
+  animation:pulseLive 2s infinite ease-in-out;
+}
+@keyframes pulseLive{
+  0%, 100%{opacity:1;transform:scale(1)}
+  50%{opacity:.4;transform:scale(.8)}
+}
+
+/* ── Live Traffic Telemetry Dashboard ── */
+.liveSectionWrap{
+  margin-top:20px;
+  background:var(--panel);
+  border:1px solid var(--hairline);
+  border-radius:14px;
+  padding:22px 20px;
+}
+.liveSectionHeader{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:18px;
+}
+.liveIndicator{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-family:var(--font-display),sans-serif;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:1px;
+  color:var(--teal);
+}
+.liveAutoRefresh{
+  font-size:11.5px;
+  color:var(--ink-dim);
+}
+.liveStatsGrid{
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:14px;
+  margin-bottom:20px;
+}
+.liveCard{
+  background:rgba(0, 0, 0, 0.28);
+  border:1px solid var(--hairline);
+  border-radius:10px;
+  padding:16px 14px;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.liveCardPrimary{
+  border-color:rgba(63, 168, 143, 0.4);
+  background:rgba(63, 168, 143, 0.04);
+}
+.liveCardTitle{
+  font-size:11.5px;
+  color:var(--ink-dim);
+  text-transform:uppercase;
+  letter-spacing:.6px;
+  font-weight:600;
+}
+.liveCardBigNumber{
+  font-size:26px;
+  font-family:var(--font-display),sans-serif;
+  color:var(--ink);
+  font-weight:800;
+  line-height:1.1;
+}
+.liveCardPrimary .liveCardBigNumber{
+  color:var(--teal);
+}
+.liveCardSub{
+  font-size:11px;
+  color:var(--ink-dim);
+}
+
+.liveDetailsGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:18px;
+}
+.liveRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:8px 0;
+  border-bottom:1px solid var(--hairline);
+  font-size:13px;
+}
+.liveRow:last-child{border-bottom:none}
+.liveRowPath{
+  font-family:monospace;
+  color:var(--ink);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  max-width:240px;
+}
+.liveRowBadge{
+  padding:2px 8px;
+  border-radius:12px;
+  font-size:11px;
+  font-weight:600;
+  background:rgba(63, 168, 143, 0.15);
+  color:var(--teal);
+  white-space:nowrap;
+}
+.activityStream{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.activityRow{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:12px;
+  padding:6px 0;
+  border-bottom:1px solid var(--hairline);
+}
+.activityRow:last-child{border-bottom:none}
+.activityDot{
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:var(--amber);
+  flex-shrink:0;
+}
+.activityPath{
+  font-family:monospace;
+  color:var(--ink);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  flex:1;
+}
+.activityMeta{
+  color:var(--ink-dim);
+  font-size:11px;
+  white-space:nowrap;
+}
+
+@media(max-width:720px){
+  .liveStatsGrid{
+    grid-template-columns:repeat(2, 1fr);
+  }
+  .liveDetailsGrid{
+    grid-template-columns:1fr;
+  }
+}
+
+
 
 

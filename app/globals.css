@@ -2204,227 +2204,449 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
   }
 }
 
-/* ── Interactive 2D World Map Telemetry Visualization ── */
-.worldMapContainer {
+/* ── Real Advanced GIS Interactive World Map (Leaflet Dark Telemetry) ── */
+.realMapContainer {
   display: grid;
   grid-template-columns: 1fr 340px;
-  gap: 20px;
-  background: rgba(12, 16, 22, 0.75);
+  gap: 16px;
+  background: rgba(12, 16, 22, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
-  padding: 20px;
-  margin-top: 16px;
-  overflow: hidden;
-  align-items: stretch;
-}
-.worldMapCanvasWrapper {
+  padding: 16px;
+  margin-top: 14px;
+  min-height: 540px;
   position: relative;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  border-radius: 10px;
-  background: #0a0e14;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  overflow: hidden;
+  transition: all 0.25s ease;
 }
-.worldMapSvgContainer {
+
+.realMapContainer.realMapFullscreen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 99999;
+  border-radius: 0;
+  padding: 16px;
+  background: #080c10;
+  grid-template-columns: 1fr 360px;
+  margin: 0;
+}
+
+.realMapCanvasWrapper {
   position: relative;
-  width: 100%;
-  aspect-ratio: 2 / 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.worldMapSvg {
   width: 100%;
   height: 100%;
-  display: block;
-  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.5));
-}
-.continentPath {
-  transition: all 0.25s ease;
-  cursor: default;
-}
-.continentPath:hover {
-  fill: #253342;
-  stroke: var(--teal);
+  min-height: 520px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #080c10;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Radar pulse animation for visitor pins */
-@keyframes mapRadarPulse {
-  0% {
-    r: 4;
-    opacity: 0.9;
-    stroke-width: 2;
-  }
-  50% {
-    opacity: 0.4;
-    stroke-width: 1.2;
-  }
-  100% {
-    r: 22;
-    opacity: 0;
-    stroke-width: 0.4;
-  }
-}
-@keyframes mapRadarSecondary {
-  0% {
-    r: 3;
-    opacity: 0.7;
-    stroke-width: 1.5;
-  }
-  100% {
-    r: 13;
-    opacity: 0;
-    stroke-width: 0.5;
-  }
-}
-.radarPulseCircle {
-  animation: mapRadarPulse 2.4s cubic-bezier(0.2, 0.6, 0.35, 1) infinite;
-  transform-origin: center;
-}
-.radarPulseSecondary {
-  animation: mapRadarSecondary 2.4s cubic-bezier(0.2, 0.6, 0.35, 1) 0.6s infinite;
-  transform-origin: center;
-}
-.mapPinGroup {
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.mapPinGroup:hover,
-.mapPinGroup.activePin {
-  transform-origin: center;
+.realMapElement {
+  width: 100%;
+  height: 100%;
+  min-height: 520px;
+  z-index: 1;
 }
 
-/* Floating Tooltip Card over Pin */
-.worldMapTooltipCard {
+/* Top Floating Telemetry Badge */
+.realMapOverlayBadge {
   position: absolute;
-  transform: translate(-50%, -120%);
-  background: rgba(14, 18, 25, 0.96);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--amber);
-  border-radius: 8px;
-  padding: 8px 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 15px rgba(244, 185, 66, 0.2);
-  pointer-events: auto;
-  z-index: 20;
-  min-width: 150px;
-  animation: tooltipFloat 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-@keyframes tooltipFloat {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -105%) scale(0.92);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -120%) scale(1);
-  }
-}
-.tooltipHeader {
-  display: flex;
+  top: 14px;
+  left: 14px;
+  z-index: 500;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
+  gap: 7px;
+  padding: 6px 13px;
+  background: rgba(10, 14, 20, 0.88);
+  border: 1px solid rgba(63, 168, 143, 0.4);
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 700;
   color: var(--ink);
-  margin-bottom: 4px;
+  backdrop-filter: blur(10px);
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
-.tooltipFlag {
-  font-size: 16px;
-}
-.tooltipMeta {
+
+/* Top-Right Tactical Controls Bar */
+.realMapTacticalBar {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 500;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
-  font-size: 11px;
-  margin-bottom: 2px;
+  flex-wrap: wrap;
 }
-.tooltipLiveCount {
+
+.realMapLayerToggle {
+  display: flex;
+  background: rgba(10, 14, 20, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 3px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.realMapLayerBtn {
+  background: transparent;
+  border: none;
+  color: var(--ink-dim);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 9px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.realMapLayerBtn:hover {
+  color: var(--ink);
+}
+
+.realMapLayerBtn.active {
+  background: rgba(63, 168, 143, 0.22);
+  color: var(--teal);
+  border: 1px solid rgba(63, 168, 143, 0.4);
+}
+
+.realMapActionBtn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  background: rgba(10, 14, 20, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 11px;
+  border-radius: 8px;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  transition: all 0.15s ease;
+}
+
+.realMapActionBtn:hover {
+  border-color: var(--amber);
+  color: var(--amber);
+  transform: translateY(-1px);
+}
+
+/* Custom Zoom Controls (bottom-right) */
+.realMapZoomControls {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.realMapZoomBtn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 14, 20, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  transition: all 0.15s ease;
+}
+
+.realMapZoomBtn:hover {
+  border-color: var(--teal);
+  color: var(--teal);
+  transform: translateY(-1px);
+}
+
+/* Tactical Coordinates HUD (bottom-left) */
+.realMapHud {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  z-index: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  background: rgba(8, 12, 17, 0.92);
+  border: 1px solid rgba(63, 168, 143, 0.3);
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 10px;
+  color: var(--ink-dim);
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+}
+
+.realMapHud .hudItem strong {
   color: var(--teal);
   font-weight: 700;
 }
-.tooltipShare {
-  color: var(--amber);
-  font-weight: 600;
-}
-.tooltipCoords {
-  font-size: 9.5px;
-  color: var(--ink-dim);
-  font-family: ui-monospace, monospace;
+
+.realMapHud .hudDivider {
+  color: rgba(255, 255, 255, 0.18);
 }
 
-/* Overlay & Hint text */
-.worldMapOverlayBadge {
-  position: absolute;
-  top: 12px;
-  left: 12px;
+.realMapHud .hudLive {
+  color: var(--amber);
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 11px;
-  background: rgba(16, 21, 28, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--ink);
-  backdrop-filter: blur(8px);
-  z-index: 10;
-  pointer-events: none;
-}
-.worldMapHintText {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 14px;
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
-  background: rgba(0, 0, 0, 0.3);
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
-.worldMapClearBtn {
-  background: none;
-  border: none;
-  color: var(--amber);
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 6px;
-}
-.worldMapClearBtn:hover {
-  text-decoration: underline;
+  gap: 5px;
 }
 
-/* Sidebar */
-.worldMapCountrySidebar {
+/* ── Custom DivIcon Radar Pulse Marker ── */
+.realMapMarkerIcon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.realMapBeacon {
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+.realMapBeacon .beaconWave {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  left: -18px;
+  top: -18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--amber);
+  animation: realMapRadarPing 2.4s cubic-bezier(0.2, 0.6, 0.35, 1) infinite;
+  pointer-events: none;
+}
+
+.realMapBeacon .beaconWaveSec {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  left: -10px;
+  top: -10px;
+  border-radius: 50%;
+  border: 1.2px solid var(--teal);
+  animation: realMapRadarPing 2.4s cubic-bezier(0.2, 0.6, 0.35, 1) 0.7s infinite;
+  pointer-events: none;
+}
+
+.realMapBeacon .beaconCore {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  left: -5px;
+  top: -5px;
+  border-radius: 50%;
+  background: var(--amber);
+  box-shadow: 0 0 12px var(--amber), 0 0 20px rgba(244, 185, 66, 0.6);
+  border: 1.5px solid #fff;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.realMapBeacon:hover .beaconCore {
+  transform: scale(1.3);
+}
+
+.realMapBeacon .beaconPill {
+  position: absolute;
+  bottom: 9px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(14, 18, 26, 0.94);
+  border: 1px solid rgba(244, 185, 66, 0.55);
+  color: var(--ink);
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+  letter-spacing: 0.02em;
+}
+
+@keyframes realMapRadarPing {
+  0% {
+    transform: scale(0.3);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+/* ── Custom Leaflet Dark Popup ── */
+.realMapCustomPopup .leaflet-popup-content-wrapper {
+  background: rgba(14, 18, 26, 0.96) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--amber) !important;
+  border-radius: 10px !important;
+  backdrop-filter: blur(14px) !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.8), 0 0 18px rgba(244, 185, 66, 0.18) !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.realMapCustomPopup .leaflet-popup-content {
+  margin: 12px 14px !important;
+  line-height: 1.4 !important;
+  font-family: var(--font-body), sans-serif !important;
+}
+
+.realMapCustomPopup .leaflet-popup-tip {
+  background: rgba(14, 18, 26, 0.96) !important;
+  border: 1px solid var(--amber) !important;
+}
+
+.realMapCustomPopup .leaflet-popup-close-button {
+  color: var(--ink-dim) !important;
+  font-size: 16px !important;
+  padding: 6px !important;
+  top: 4px !important;
+  right: 4px !important;
+}
+
+.realMapPopupHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.realMapPopupFlag {
+  font-size: 20px;
+}
+
+.realMapPopupTitleWrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.realMapPopupTitle {
+  font-size: 13px;
+  color: #fff;
+  font-weight: 700;
+}
+
+.realMapPopupPct {
+  font-size: 10px;
+  color: var(--amber);
+  font-weight: 600;
+}
+
+.realMapPopupMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--teal);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.realMapPopupCoords {
+  font-size: 10.5px;
+  color: var(--ink-dim);
+  font-family: ui-monospace, monospace;
+  margin-bottom: 10px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 3px 6px;
+  border-radius: 4px;
+}
+
+.realMapPopupActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.realMapPopupGmapsBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #0b1117;
+  background: var(--amber);
+  padding: 5px 9px;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.realMapPopupGmapsBtn:hover {
+  filter: brightness(1.15);
+  text-decoration: none;
+}
+
+.realMapPopupZoomBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--teal);
+  background: rgba(63, 168, 143, 0.14);
+  border: 1px solid rgba(63, 168, 143, 0.35);
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.realMapPopupZoomBtn:hover {
+  background: var(--teal);
+  color: #0b1117;
+}
+
+/* ── Live Hotspot Sidebar ── */
+.realMapSidebar {
   display: flex;
   flex-direction: column;
   gap: 10px;
   height: 100%;
-  max-height: 480px;
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid var(--hairline);
+  min-height: 520px;
+  max-height: 560px;
+  background: rgba(10, 14, 20, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
   padding: 14px;
 }
-.worldMapCountryHeader {
+
+.realMapSidebarHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding-bottom: 8px;
-  border-bottom: 1px solid var(--hairline);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
-.worldMapSearchWrap {
+
+.realMapSearchWrap {
   position: relative;
   display: flex;
   align-items: center;
 }
-.worldMapSearchInput {
+
+.realMapSearchInput {
   width: 100%;
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid var(--hairline);
@@ -2435,10 +2657,12 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
   outline: none;
   font-family: inherit;
 }
-.worldMapSearchInput:focus {
+
+.realMapSearchInput:focus {
   border-color: var(--amber);
 }
-.worldMapSearchClear {
+
+.realMapSearchClear {
   position: absolute;
   right: 6px;
   background: none;
@@ -2447,7 +2671,8 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
   font-size: 10.5px;
   cursor: pointer;
 }
-.worldMapCountryList {
+
+.realMapCountryList {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -2455,7 +2680,8 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
   flex: 1;
   padding-right: 4px;
 }
-.worldMapCountryItem {
+
+.realMapCountryItem {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -2470,48 +2696,62 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
   font-family: inherit;
   width: 100%;
 }
-.worldMapCountryItem:hover {
+
+.realMapCountryItem:hover {
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.1);
   transform: translateX(2px);
 }
-.worldMapCountryItem.selected {
+
+.realMapCountryItem.selected {
   background: rgba(244, 185, 66, 0.12);
   border-color: rgba(244, 185, 66, 0.35);
 }
-.worldMapCountryItem.selected .worldMapItemName {
+
+.realMapCountryItem.selected .realMapItemName {
   color: var(--amber);
 }
-.worldMapItemTop {
+
+.realMapItemTop {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
-.worldMapItemLeft {
+
+.realMapItemLeft {
   display: flex;
   align-items: center;
   gap: 6px;
   overflow: hidden;
 }
-.worldMapItemRank {
+
+.realMapItemRank {
   font-size: 10px;
   color: var(--ink-dim);
   font-weight: 700;
   width: 18px;
 }
-.worldMapItemFlag {
+
+.realMapItemFlag {
   font-size: 15px;
   flex-shrink: 0;
 }
-.worldMapItemName {
+
+.realMapItemName {
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
-.worldMapItemCount {
+
+.realMapItemCity {
+  font-size: 11px;
+  color: var(--ink-dim);
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
+.realMapItemCount {
   font-size: 11px;
   color: var(--teal);
   background: rgba(63, 168, 143, 0.12);
@@ -2520,39 +2760,58 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
   font-weight: 600;
   white-space: nowrap;
 }
-.worldMapItemBarBg {
+
+.realMapItemBarBg {
   width: 100%;
   height: 3px;
   background: rgba(255, 255, 255, 0.06);
   border-radius: 999px;
   overflow: hidden;
 }
-.worldMapItemBarFill {
+
+.realMapItemBarFill {
   height: 100%;
   background: var(--amber);
   border-radius: inherit;
   transition: width 0.3s ease;
 }
 
-@media(max-width: 900px) {
-  .worldMapContainer {
+@media (max-width: 960px) {
+  .realMapContainer {
     grid-template-columns: 1fr;
   }
-  .worldMapCountrySidebar {
+  .realMapSidebar {
     max-height: 280px;
+    min-height: 220px;
   }
 }
-@media(max-width: 600px) {
-  .worldMapContainer {
-    padding: 12px;
+
+@media (max-width: 600px) {
+  .realMapContainer {
+    padding: 10px;
   }
-  .worldMapOverlayBadge {
+  .realMapCanvasWrapper {
+    min-height: 420px;
+  }
+  .realMapElement {
+    min-height: 420px;
+  }
+  .realMapOverlayBadge {
     font-size: 10px;
     padding: 4px 8px;
   }
-  .worldMapHintText {
+  .realMapTacticalBar {
+    top: 8px;
+    right: 8px;
+    gap: 4px;
+  }
+  .realMapLayerBtn {
+    padding: 4px 6px;
     font-size: 10px;
-    padding: 6px 10px;
+  }
+  .realMapActionBtn {
+    padding: 4px 7px;
+    font-size: 10px;
   }
 }
 

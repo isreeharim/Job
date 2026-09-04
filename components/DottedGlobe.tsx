@@ -24,11 +24,6 @@ export function DottedGlobe({ countries, activeCount = 0 }: DottedGlobeProps) {
 
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [webglSupported, setWebglSupported] = useState<boolean>(true);
-  const [mounted, setMounted] = useState<boolean>(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Compute markers based on countries
   const markers: Marker[] = useMemo(() => {
@@ -60,41 +55,35 @@ export function DottedGlobe({ countries, activeCount = 0 }: DottedGlobeProps) {
   };
 
   useEffect(() => {
-    if (!mounted) return;
+    let width = 0;
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const onResize = () => {
-      if (canvas && globeRef.current) {
-        const w = canvas.offsetWidth;
-        if (w > 0) {
-          globeRef.current.update({
-            width: w * 2,
-            height: w * 2,
-          });
-        }
+      if (canvas) {
+        width = canvas.offsetWidth;
       }
     };
     window.addEventListener("resize", onResize);
+    onResize();
 
     let animId: number;
 
     try {
-      const initialWidth = canvas.offsetWidth || 380;
       const globe = createGlobe(canvas, {
         devicePixelRatio: Math.min(window.devicePixelRatio || 2, 2),
-        width: initialWidth * 2,
-        height: initialWidth * 2,
+        width: (width || 380) * 2,
+        height: (width || 380) * 2,
         phi: 0,
-        theta: 0.2,
-        dark: 0,
-        diffuse: 1.4,
-        mapSamples: 18000,
-        mapBrightness: 8,
-        baseColor: [0.85, 0.88, 0.95],
+        theta: 0.25,
+        dark: 1,
+        diffuse: 1.3,
+        mapSamples: 16000,
+        mapBrightness: 6,
+        baseColor: [0.2, 0.22, 0.26],
         markerColor: [0.96, 0.73, 0.26],
-        glowColor: [0.2, 0.6, 0.5],
-        opacity: 0.95,
+        glowColor: [0.15, 0.55, 0.45],
+        opacity: 0.9,
         offset: [0, 0],
         markers: markers,
       });
@@ -135,7 +124,7 @@ export function DottedGlobe({ countries, activeCount = 0 }: DottedGlobeProps) {
         globeRef.current = null;
       }
     };
-  }, [mounted]);
+  }, []);
 
   // Update markers on the live globe when prop updates
   useEffect(() => {

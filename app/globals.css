@@ -652,26 +652,66 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
   }
 
   /* Job detail */
-  .jobDetail{margin-top:14px}
-  .jobDetail h1{font-size:clamp(26px,7vw,38px);line-height:1.1}
-  .jobDetail h2{font-size:16px}
-  .detailMeta{flex-wrap:wrap;gap:8px 12px}
+  .jobDetail{margin-top:14px;max-width:100%;overflow-x:hidden}
+  .jobDetail h1,.savedPage h1{
+    font-size:clamp(22px,6.5vw,36px);
+    line-height:1.15;
+    word-break:break-word;
+    overflow-wrap:break-word;
+  }
+  .jobDetail h2{font-size:16px;word-break:break-word}
+  .detailMeta{flex-wrap:wrap;gap:8px 10px;margin:16px 0}
+  .detailMeta span{
+    max-width:100%;
+    word-break:break-word;
+    font-size:11.5px;
+    padding:6px 10px;
+  }
   .detailActions{
     display:flex;
     flex-direction:column;
     gap:10px;
     width:100%;
+    margin:18px 0 28px;
   }
   .detailActions .star-border-container{
     width:100%;
+    box-sizing:border-box;
   }
   .detailActions .star-border-inner{
     width:100%;
     padding:13px;
+    box-sizing:border-box;
   }
   .detailActions .saveButton{
     width:100%;
     padding:12px;
+    box-sizing:border-box;
+  }
+  .descriptionSpotlight{
+    max-width:100%;
+    overflow:hidden;
+  }
+  .description{
+    padding-top:16px;
+    max-width:100%;
+    overflow-wrap:break-word;
+  }
+  .description p{
+    font-size:13.5px;
+    line-height:1.65;
+    word-break:break-word;
+    overflow-wrap:anywhere;
+  }
+  .savedPage{
+    margin:14px auto 30px;
+    max-width:100%;
+    overflow-x:hidden;
+  }
+  .savedIntro{
+    font-size:13px;
+    margin:0 0 18px;
+    line-height:1.5;
   }
 
   /* Account & Profile */
@@ -824,12 +864,83 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
   }
 
   /* Analytics & Intelligence */
-  .analyticsStats{grid-template-columns:1fr 1fr}
-  .analyticsGrid{grid-template-columns:1fr}
-  .barRow{grid-template-columns:80px 1fr 24px}
+  .analyticsStats{
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin:16px 0 20px;
+  }
+  .analyticsStats>div{
+    padding:12px 10px;
+    border-radius:8px;
+    box-sizing:border-box;
+    overflow:hidden;
+  }
+  .analyticsStats b{
+    font-size:24px;
+    line-height:1.1;
+  }
+  .analyticsStats span{
+    font-size:10px;
+    letter-spacing:.05em;
+  }
+  .trendCard{
+    padding:14px 12px;
+    overflow:hidden;
+    max-width:100%;
+    box-sizing:border-box;
+  }
+  .trend{
+    height:130px;
+    gap:6px;
+    padding-top:10px;
+    max-width:100%;
+  }
+  .trend i{
+    max-width:28px;
+  }
+  .trend b{
+    font-size:11px;
+  }
+  .trend span{
+    font-size:10px;
+  }
+  .analyticsGrid{
+    grid-template-columns:1fr;
+    gap:10px;
+    margin-top:10px;
+  }
+  .analyticsCard{
+    padding:14px 12px;
+    border-radius:8px;
+    max-width:100%;
+    overflow:hidden;
+    box-sizing:border-box;
+  }
+  .analyticsCard h2{
+    font-size:17px;
+    margin:0 0 12px;
+  }
+  .barRow{
+    grid-template-columns:85px 1fr 24px;
+    gap:6px;
+    margin:8px 0;
+    font-size:11.5px;
+  }
+  .barRow>span{
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .barRow>div{
+    min-width:0;
+  }
+  .barRow b{
+    font-size:11px;
+  }
   .intelStats{grid-template-columns:1fr 1fr}
   .intelGrid{grid-template-columns:1fr}
-  .intelCallout h2{font-size:22px}
+  .intelCallout h2{font-size:20px}
 }
 
 /* ════════════════════════════════════════

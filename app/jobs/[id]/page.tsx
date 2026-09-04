@@ -121,9 +121,9 @@ export default async function JobPage({params}:{params:Promise<{id:string}>}){
           spotlightColor="rgba(244, 185, 66, 0.05)"
           borderHoverColor="var(--hairline)"
         >
-          <section className="description" style={{border:"none",padding:24}}>
+          <section className="description" style={{border:"none",padding:"clamp(16px, 4vw, 24px)"}}>
             <h3>About this role</h3>
-            <p style={{whiteSpace:"pre-wrap"}}>{formattedDescription}</p>
+            <p style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere",wordBreak:"break-word"}}>{formattedDescription}</p>
           </section>
         </SpotlightCard>
 

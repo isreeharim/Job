@@ -67,6 +67,12 @@ async function fetchJobicy():Promise<Job[]>{
   return sourceJobs(data,"jobs").map(j=>({id:"Jobicy-"+numberOrString(j.id),title:text(j.jobTitle),company:text(j.companyName),location:text(j.jobGeo,"Remote"),url:text(j.url),description:text(j.jobExcerpt)||text(j.jobDescription),source:"Jobicy",publishedAt:text(j.pubDate)||undefined}));
 }
 
+function cleanSlug(val: string): string {
+  if (!val) return "";
+  const segment = val.includes("/") ? (val.split("/").filter(Boolean).pop() || "") : val;
+  return segment.replace(/[^a-zA-Z0-9_-]/g, "");
+}
+
 async function fetchHimalayas():Promise<Job[]>{
   const res=await fetch("https://himalayas.app/jobs/api?limit=50",{
     next:{revalidate:3600},
@@ -76,15 +82,16 @@ async function fetchHimalayas():Promise<Job[]>{
   if(!res.ok)throw new Error(`Himalayas HTTP ${res.status}`);
   const data:unknown=await res.json();
   return sourceJobs(data,"jobs").map(j=>{
-    const id=text(j.guid)||text(j.applicationLink);
+    const appLink=text(j.applicationLink)||text(j.guid);
+    const slug=cleanSlug(appLink)||cleanSlug(text(j.slug))||cleanSlug(text(j.title))||Math.random().toString(36).slice(2,8);
     const locations=Array.isArray(j.locationRestrictions)?j.locationRestrictions.join(", "):"Remote";
     const pubDate=typeof j.pubDate==="number"?new Date(j.pubDate*1000).toISOString():undefined;
     return {
-      id:"Himalayas-"+(id||text(j.title)),
+      id:"Himalayas-"+slug,
       title:text(j.title),
       company:text(j.companyName),
       location:locations||"Remote",
-      url:text(j.applicationLink),
+      url:text(j.applicationLink)||text(j.guid),
       description:text(j.description),
       source:"Himalayas",
       publishedAt:pubDate
@@ -100,16 +107,20 @@ async function fetchWorkingNomads():Promise<Job[]>{
   });
   if(!res.ok)throw new Error(`WorkingNomads HTTP ${res.status}`);
   const data:unknown=await res.json();
-  return records(data).map(j=>({
-    id:"WorkingNomads-"+(numberOrString(j.id)||text(j.url)),
-    title:text(j.title),
-    company:text(j.company_name),
-    location:text(j.location,"Remote"),
-    url:text(j.url),
-    description:text(j.description),
-    source:"WorkingNomads",
-    publishedAt:text(j.pub_date)||undefined
-  }));
+  return records(data).map(j=>{
+    const rawId=numberOrString(j.id);
+    const slug=cleanSlug(rawId)||cleanSlug(text(j.url))||cleanSlug(text(j.title))||Math.random().toString(36).slice(2,8);
+    return {
+      id:"WorkingNomads-"+slug,
+      title:text(j.title),
+      company:text(j.company_name),
+      location:text(j.location,"Remote"),
+      url:text(j.url),
+      description:text(j.description),
+      source:"WorkingNomads",
+      publishedAt:text(j.pub_date)||undefined
+    };
+  });
 }
 
 async function fetchWeWorkRemotely():Promise<Job[]>{
@@ -129,9 +140,10 @@ async function fetchWeWorkRemotely():Promise<Job[]>{
     const rawTitle=titleMatch?titleMatch[1].trim():"";
     const [company,...roleParts]=rawTitle.includes(":")?rawTitle.split(":"):["WeWorkRemotely",rawTitle];
     const url=linkMatch?linkMatch[1].trim():"";
+    const slug=cleanSlug(url)||cleanSlug(rawTitle)||"job-"+Math.random().toString(36).slice(2,8);
     const pubDate=dateMatch?new Date(dateMatch[1]).toISOString():undefined;
     return {
-      id:"WWR-"+(url.split("/").filter(Boolean).pop()||rawTitle),
+      id:"WWR-"+slug,
       title:roleParts.join(":").trim()||rawTitle,
       company:company.trim(),
       location:"Worldwide",

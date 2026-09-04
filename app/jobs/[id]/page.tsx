@@ -51,8 +51,27 @@ export default async function JobPage({params}:{params:Promise<{id:string}>}){
   const client=supabaseAdmin||supabase;
   if(!client)notFound();
 
-  const {id}=await params;
-  const {data:job}=await client!.from("jobs").select("*").eq("id",id).maybeSingle();
+  const {id:rawId}=await params;
+  const decodedId=decodeURIComponent(rawId);
+
+  // 1. Exact match with raw ID
+  let {data:job}=await client!.from("jobs").select("*").eq("id",rawId).maybeSingle();
+
+  // 2. Exact match with decoded ID
+  if(!job && rawId!==decodedId){
+    const res=await client!.from("jobs").select("*").eq("id",decodedId).maybeSingle();
+    job=res.data;
+  }
+
+  // 3. Fallback: match by slug tail (handles legacy links with URLs/slashes)
+  if(!job){
+    const cleanTail=decodedId.split("/").filter(Boolean).pop()?.replace(/[^a-zA-Z0-9_-]/g,"");
+    if(cleanTail && cleanTail.length > 3){
+      const res=await client!.from("jobs").select("*").ilike("id",`%${cleanTail}%`).limit(1).maybeSingle();
+      job=res.data;
+    }
+  }
+
   if(!job)notFound();
 
   const saved={

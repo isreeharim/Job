@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {usePathname} from "next/navigation";
 import {AccountButton} from "@/components/AccountButton";
+import {LiveVisitorBadge} from "@/components/LiveVisitorBadge";
 import {ShinyText} from "@/components/reactbits/ShinyText";
 
 const NAV_LINKS=[
@@ -36,8 +37,11 @@ export function AppHeader(){
         <Link className="brand" href="/">
           <ShinyText text="RemoteFlow" speed={4} />
         </Link>
-        <div className="headerMobileAccount">
-          <AccountButton/>
+        <div className="headerTopActions">
+          <LiveVisitorBadge />
+          <div className="headerMobileAccount">
+            <AccountButton/>
+          </div>
         </div>
       </div>
 
@@ -56,6 +60,7 @@ export function AppHeader(){
           );
         })}
         <div className="headerDesktopAccount">
+          <LiveVisitorBadge />
           <AccountButton/>
         </div>
       </nav>

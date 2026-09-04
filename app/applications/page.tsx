@@ -60,6 +60,16 @@ export default function ApplicationsPage(){
     })();
   },[]);
 
+  // Close Add form with Escape key
+  useEffect(()=>{
+    if(!show)return;
+    const onKeyDown=(e:KeyboardEvent)=>{
+      if(e.key==="Escape")setShow(false);
+    };
+    window.addEventListener("keydown",onKeyDown);
+    return()=>window.removeEventListener("keydown",onKeyDown);
+  },[show]);
+
   function persist(n:App[]){
     setItems(n);
     try{

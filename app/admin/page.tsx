@@ -154,7 +154,7 @@ export default function AdminPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Refresh failed");
 
-      setRefreshMessage(`Refreshed successfully: ${data.totalProcessed} jobs processed!`);
+      setRefreshMessage(`Refreshed successfully: ${data.totalProcessed} jobs processed (${data.newJobs ?? 0} new)!`);
       // Update health status
       const hRes = await fetch("/api/health");
       if (hRes.ok) setHealth(await hRes.json());
@@ -499,12 +499,12 @@ export default function AdminPage() {
 
           {refreshMessage && (
             <div
-              className="authBanner"
-              style={{
-                marginBottom: 16,
-                borderColor: refreshMessage.includes("success") ? "var(--teal)" : "var(--amber)",
-                color: refreshMessage.includes("success") ? "var(--teal)" : "var(--amber)",
-              }}
+              className={
+                refreshMessage.includes("success") || refreshMessage.includes("Refreshed")
+                  ? "authAlert success"
+                  : "adminErrorBanner"
+              }
+              style={{ marginBottom: 16 }}
             >
               {refreshMessage}
             </div>

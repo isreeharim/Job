@@ -9,7 +9,10 @@ import {SpotlightCard,StarBorder} from "@/components/reactbits";
 export default function AccountPage(){
   const{email,loading,signInWithPassword,signUpWithPassword,signOut}=useAuth();
 
-  const[isSignUp,setIsSignUp]=useState(false);
+  const[isSignUp,setIsSignUp]=useState(()=>{
+    if(typeof window==="undefined")return false;
+    return new URLSearchParams(window.location.search).get("mode")==="signup";
+  });
   const[emailInput,setEmailInput]=useState("");
   const[password,setPassword]=useState("");
   const[confirmPassword,setConfirmPassword]=useState("");

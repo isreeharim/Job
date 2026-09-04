@@ -1256,4 +1256,179 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
   }
 }
 
+/* ── SignUp Prompt Modal ── */
+.modalOverlay{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:16px;
+  background:rgba(10, 14, 20, 0.78);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  animation:modalFadeIn .2s ease-out;
+}
+.modalCard{
+  position:relative;
+  width:100%;
+  max-width:480px;
+  background:var(--panel);
+  border:1px solid var(--hairline);
+  border-radius:16px;
+  padding:30px 26px;
+  box-shadow:0 24px 60px rgba(0, 0, 0, 0.65);
+  animation:modalScaleUp .25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.modalCloseBtn{
+  position:absolute;
+  top:14px;
+  right:14px;
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  background:rgba(255, 255, 255, 0.04);
+  border:1px solid var(--hairline);
+  color:var(--ink-dim);
+  font-size:20px;
+  line-height:1;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:all .15s ease;
+}
+.modalCloseBtn:hover{
+  background:rgba(255, 255, 255, 0.08);
+  color:var(--ink);
+  border-color:var(--ink-dim);
+}
+.modalHeader{
+  margin-bottom:18px;
+}
+.modalKicker{
+  display:inline-block;
+  font-family:var(--font-display),sans-serif;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:1.2px;
+  color:var(--amber);
+  margin-bottom:6px;
+}
+.modalTitle{
+  font-family:var(--font-display),sans-serif;
+  font-size:26px;
+  font-weight:800;
+  letter-spacing:.2px;
+  color:var(--ink);
+  margin:0 0 8px 0;
+  line-height:1.18;
+}
+.modalSubtitle{
+  font-size:13.5px;
+  color:var(--ink-dim);
+  line-height:1.5;
+  margin:0;
+}
+.modalBenefits{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  padding:16px;
+  background:rgba(0, 0, 0, 0.28);
+  border:1px solid var(--hairline);
+  border-radius:12px;
+  margin-bottom:22px;
+}
+.benefitItem{
+  display:flex;
+  gap:12px;
+  align-items:flex-start;
+}
+.benefitIcon{
+  color:var(--amber);
+  font-size:13px;
+  margin-top:2px;
+  flex-shrink:0;
+}
+.benefitItem strong{
+  font-size:13px;
+  color:var(--ink);
+  display:block;
+  margin-bottom:2px;
+}
+.benefitItem p{
+  font-size:12px;
+  color:var(--ink-dim);
+  margin:0;
+  line-height:1.4;
+}
+.modalActions{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.modalPrimaryBtn{
+  width:100%;
+  padding:12px;
+  background:var(--amber);
+  color:var(--bg);
+  border:none;
+  border-radius:8px;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+  transition:opacity .15s ease;
+  font-family:var(--font-body),sans-serif;
+}
+.modalPrimaryBtn:hover{
+  opacity:.92;
+}
+.modalSecondaryBtn{
+  width:100%;
+  padding:10px;
+  background:transparent;
+  color:var(--ink-dim);
+  border:1px solid var(--hairline);
+  border-radius:8px;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all .15s ease;
+  font-family:var(--font-body),sans-serif;
+}
+.modalSecondaryBtn:hover{
+  background:rgba(255, 255, 255, 0.04);
+  color:var(--ink);
+  border-color:var(--ink-dim);
+}
+.modalFooterNote{
+  text-align:center;
+  font-size:12px;
+  color:var(--ink-dim);
+  margin:16px 0 0 0;
+}
+.modalInlineLink{
+  background:none;
+  border:none;
+  color:var(--amber);
+  font-size:12px;
+  font-weight:600;
+  cursor:pointer;
+  text-decoration:underline;
+  padding:0;
+  font-family:inherit;
+}
+
+@keyframes modalFadeIn{
+  from{opacity:0}
+  to{opacity:1}
+}
+@keyframes modalScaleUp{
+  from{opacity:0;transform:scale(.95) translateY(8px)}
+  to{opacity:1;transform:scale(1) translateY(0)}
+}
+
+
 

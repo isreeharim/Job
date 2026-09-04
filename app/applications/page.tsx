@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import {FormEvent,useEffect,useMemo,useState} from "react";
-import {currentUser,loadCloudApps,saveCloudApps} from "@/lib/cloud";
+import {currentUser,loadCloudApps,saveCloudApps,deleteCloudApp} from "@/lib/cloud";
 import {AppHeader} from "@/components/AppHeader";
 import {SpotlightCard,CountUp,StarBorder,ShinyText} from "@/components/reactbits";
 
@@ -36,6 +36,8 @@ export default function ApplicationsPage(){
   const[show,setShow]=useState(false);
   const[filter,setFilter]=useState<"all"|"upcoming"|"overdue">("all");
   const[mobileStatusTab,setMobileStatusTab]=useState<Status|"all">("all");
+  const[confirmDeleteId,setConfirmDeleteId]=useState<string|null>(null);
+  const[deletingId,setDeletingId]=useState<string|null>(null);
 
   useEffect(()=>{
     void(async()=>{
@@ -52,10 +54,12 @@ export default function ApplicationsPage(){
 
   function persist(n:App[]){
     setItems(n);
+    try{
+      localStorage.setItem(KEY,JSON.stringify(n));
+      localStorage.removeItem(LEGACY);
+    }catch{}
     if(cloud){
       void saveCloudApps(n);
-    }else{
-      localStorage.setItem(KEY,JSON.stringify(n));
     }
   }
 
@@ -87,10 +91,15 @@ export default function ApplicationsPage(){
     persist(items.map(x=>x.id===id?{...x,...p,updatedAt:new Date().toISOString()}:x));
   }
 
-  function remove(id:string){
-    if(confirm("Remove this application?")){
-      persist(items.filter(x=>x.id!==id));
+  async function remove(id:string){
+    setDeletingId(id);
+    const updated=items.filter(x=>x.id!==id);
+    persist(updated);
+    if(cloud){
+      await deleteCloudApp(id);
     }
+    setDeletingId(null);
+    setConfirmDeleteId(null);
   }
 
   const today=new Date().toISOString().slice(0,10);
@@ -263,9 +272,36 @@ export default function ApplicationsPage(){
                       />
                       <div className="cardActions">
                         {item.job.url&&(
-                          <a href={item.job.url} target="_blank" rel="noreferrer">Open ↗</a>
+                          <a href={item.job.url} target="_blank" rel="noreferrer" className="cardOpenLink">Open ↗</a>
                         )}
-                        <button type="button" onClick={()=>remove(item.id)}>Remove</button>
+                        {confirmDeleteId===item.id?(
+                          <div style={{display:"inline-flex",alignItems:"center",gap:6}}>
+                            <button
+                              type="button"
+                              className="appDeleteConfirmBtn"
+                              disabled={deletingId===item.id}
+                              onClick={()=>void remove(item.id)}
+                            >
+                              {deletingId===item.id?"Deleting…":"Confirm Delete"}
+                            </button>
+                            <button
+                              type="button"
+                              className="appDeleteCancelBtn"
+                              onClick={()=>setConfirmDeleteId(null)}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ):(
+                          <button
+                            type="button"
+                            className="appDeleteButton"
+                            onClick={()=>setConfirmDeleteId(item.id)}
+                            title="Delete this application"
+                          >
+                            Delete
+                          </button>
+                        )}
                       </div>
                     </article>
                   </SpotlightCard>

@@ -299,8 +299,68 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
 .applicationForm>div{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
 .trackerCardFull p{font-size:11px;line-height:1.5;color:var(--ink-dim);margin:2px 0}
 .trackerCardFull small{font-size:11px;color:var(--ink-dim)}
-.cardActions{display:flex;gap:12px;margin-top:4px}
-.cardActions button,.cardActions a{padding:0;border:none;background:none;color:var(--amber);font-size:11px;cursor:pointer;text-decoration:none}
+.cardActions{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.cardActions button,.cardActions a{font-family:inherit}
+.appDeleteButton{
+  padding:4px 10px !important;
+  border:1px solid rgba(239,68,68,0.3) !important;
+  border-radius:4px !important;
+  background:rgba(239,68,68,0.08) !important;
+  color:#f87171 !important;
+  font-size:11px !important;
+  font-weight:600 !important;
+  cursor:pointer !important;
+  transition:all .15s ease !important;
+}
+.appDeleteButton:hover{
+  background:rgba(239,68,68,0.2) !important;
+  border-color:#ef4444 !important;
+  color:#fff !important;
+}
+.appDeleteConfirmBtn{
+  padding:4px 9px !important;
+  border:1px solid #ef4444 !important;
+  border-radius:4px !important;
+  background:#dc2626 !important;
+  color:#fff !important;
+  font-size:11px !important;
+  font-weight:700 !important;
+  cursor:pointer !important;
+  transition:background .15s ease !important;
+}
+.appDeleteConfirmBtn:hover{
+  background:#b91c1c !important;
+}
+.appDeleteCancelBtn{
+  padding:4px 7px !important;
+  border:1px solid var(--hairline) !important;
+  border-radius:4px !important;
+  background:rgba(255,255,255,0.05) !important;
+  color:var(--ink-dim) !important;
+  font-size:11px !important;
+  cursor:pointer !important;
+}
+.appDeleteCancelBtn:hover{
+  color:var(--ink) !important;
+  background:rgba(255,255,255,0.1) !important;
+}
+.cardOpenLink{
+  padding:4px 9px !important;
+  border:1px solid var(--hairline) !important;
+  border-radius:4px !important;
+  background:rgba(255,255,255,0.03) !important;
+  color:var(--amber) !important;
+  font-size:11px !important;
+  font-weight:600 !important;
+  text-decoration:none !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  transition:all .15s ease !important;
+}
+.cardOpenLink:hover{
+  border-color:var(--amber) !important;
+  background:rgba(244,185,66,0.1) !important;
+}
 .inlineNotes{width:100%;margin-top:7px;min-height:70px;border:1px solid var(--hairline);border-radius:5px;background:transparent;color:var(--ink);padding:7px;font:inherit;font-size:11px;resize:vertical}
 .nextDateInput,.nextActionInput{width:100%;background:transparent;border:1px solid var(--hairline);border-radius:4px;color:var(--ink);padding:6px;font:inherit;font-size:11px}
 .nextActionInput{margin-top:5px}

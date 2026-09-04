@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { SpotlightCard } from "@/components/reactbits/SpotlightCard";
+import { DottedGlobe } from "@/components/DottedGlobe";
 
 type LiveData = {
   liveVisitors: number;
@@ -422,8 +423,29 @@ export default function AdminPage() {
             </div>
           </div>
 
+          {/* ── 3D DOTTED GLOBE TELEMETRY ── */}
+          <div style={{ marginTop: 24 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span className="liveDot" style={{ background: "var(--amber)", boxShadow: "0 0 8px var(--amber)" }} />
+                <h3 style={{ fontSize: 14, fontWeight: 700, margin: 0, color: "var(--ink)", letterSpacing: 0.6, textTransform: "uppercase", fontFamily: "var(--font-display), sans-serif" }}>
+                  Global Audience Telemetry (Interactive 3D Dotted Globe)
+                </h3>
+              </div>
+              <span style={{ fontSize: 11.5, color: "var(--ink-dim)" }}>
+                Drag globe to rotate · Real-time edge IP mapping
+              </span>
+            </div>
+
+            <DottedGlobe
+              countries={live?.topCountries || []}
+              activeCount={live?.liveVisitors || 0}
+            />
+          </div>
+
+          {/* ── ACTIVE ROUTES & ACTIVITY STREAM ── */}
           {live && (
-            <div className="liveDetailsGrid">
+            <div className="liveDetailsGrid" style={{ marginTop: 20 }}>
               {/* Active Pages */}
               <div className="analyticsCard">
                 <h2>Active Routes Right Now</h2>
@@ -441,45 +463,28 @@ export default function AdminPage() {
                 )}
               </div>
 
-              {/* Geographic Distribution */}
+              {/* Activity Stream */}
               <div className="analyticsCard">
-                <h2>Top Visitor Countries (Live)</h2>
-                {live.topCountries.length ? (
-                  live.topCountries.map((c) => (
-                    <div className="liveRow" key={c.country}>
-                      <span className="liveRowPath">Country code: {c.country}</span>
-                      <span className="liveRowBadge">{c.count} sessions</span>
-                    </div>
-                  ))
+                <h2>Recent Visitor Activity Stream</h2>
+                {live.recentEvents.length ? (
+                  <div className="activityStream">
+                    {live.recentEvents.map((e) => (
+                      <div className="activityRow" key={e.id}>
+                        <span className="activityDot" />
+                        <span className="activityPath" title={e.pathname}>
+                          {e.pathname}
+                        </span>
+                        <span className="activityMeta">
+                          {e.country !== "Unknown" ? `[${e.country}] ` : ""}
+                          {e.device} · {timeAgo(e.createdAt)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
-                  <p className="muted">Waiting for edge IP geolocation…</p>
+                  <p className="muted">No recent pageviews recorded yet.</p>
                 )}
               </div>
-            </div>
-          )}
-
-          {/* Activity Stream */}
-          {live && (
-            <div className="analyticsCard" style={{ marginTop: 16 }}>
-              <h2>Recent Visitor Activity Stream</h2>
-              {live.recentEvents.length ? (
-                <div className="activityStream">
-                  {live.recentEvents.map((e) => (
-                    <div className="activityRow" key={e.id}>
-                      <span className="activityDot" />
-                      <span className="activityPath" title={e.pathname}>
-                        {e.pathname}
-                      </span>
-                      <span className="activityMeta">
-                        {e.country !== "Unknown" ? `[${e.country}] ` : ""}
-                        {e.device} · {timeAgo(e.createdAt)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="muted">No recent pageviews recorded yet.</p>
-              )}
             </div>
           )}
         </section>

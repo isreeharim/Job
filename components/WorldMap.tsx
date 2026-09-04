@@ -35,6 +35,8 @@ type MapPin = {
   count: number;
 };
 
+const CARTO_API_KEY = process.env.NEXT_PUBLIC_CARTO_API_KEY || "cb1_2woz_1_dfd3d3195b6bfb7c4d536fdd";
+
 export function WorldMap({ countries, locations, activeCount = 0 }: WorldMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -233,10 +235,12 @@ export function WorldMap({ countries, locations, activeCount = 0 }: WorldMapProp
 
       // Layer 1: CartoDB Dark Matter
       const darkLayer = L.tileLayer(
-        "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+        `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${CARTO_API_KEY}`,
         {
           subdomains: "abcd",
           maxZoom: 19,
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>',
         }
       );
 
@@ -245,15 +249,19 @@ export function WorldMap({ countries, locations, activeCount = 0 }: WorldMapProp
         "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
         {
           maxZoom: 19,
+          attribution:
+            '&copy; <a href="https://www.esri.com/" target="_blank" rel="noopener noreferrer">Esri</a>, USGS, NOAA',
         }
       );
 
       // Layer 3: CartoDB Voyager (Street)
       const streetLayer = L.tileLayer(
-        "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+        `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${CARTO_API_KEY}`,
         {
           subdomains: "abcd",
           maxZoom: 19,
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>',
         }
       );
 

@@ -715,7 +715,7 @@ export default function AdminPage() {
                               </div>
                             </td>
                             <td data-label="Location">
-                              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                              <div className="ipLocationWrapper" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                                 <span style={{ fontSize: 15 }}>{geo.flag}</span>
                                 <span style={{ fontWeight: 600 }}>{geo.name}</span>
                                 {v.city && (
@@ -768,7 +768,7 @@ export default function AdminPage() {
                                 {v.device === "mobile" ? "📱 Mobile" : v.device === "tablet" ? "📟 Tablet" : "💻 Desktop"}
                               </span>
                             </td>
-                            <td data-label={ipViewMode === "all" ? "Last Seen" : "Active"} style={{ color: "var(--ink-dim)", fontSize: 11.5, whiteSpace: "nowrap" }}>
+                            <td data-label={ipViewMode === "all" ? "Last Seen" : "Active Latency"} style={{ color: "var(--ink-dim)", fontSize: 11.5, whiteSpace: "nowrap" }}>
                               {isSaved ? timeAgo(v.lastSeen) : timeAgo(v.lastPingAt)}
                             </td>
                           </tr>
@@ -841,10 +841,12 @@ export default function AdminPage() {
                   <div className="activityStream">
                     {live.recentEvents.map((e) => (
                       <div className="activityRow" key={e.id}>
-                        <span className="activityDot" />
-                        <span className="activityPath" title={e.pathname}>
-                          {e.pathname}
-                        </span>
+                        <div className="activityTarget">
+                          <span className="activityDot" />
+                          <span className="activityPath" title={e.pathname}>
+                            {e.pathname}
+                          </span>
+                        </div>
                         <span className="activityMeta">
                           {e.country !== "Unknown" ? `[${e.country}] ` : ""}
                           {e.city ? `${e.city} · ` : ""}

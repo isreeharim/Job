@@ -75,6 +75,7 @@ export default function Home(){
   const[currentPage,setCurrentPage]=useState(1);
   const[hasMore,setHasMore]=useState(false);
   const[totalCount,setTotalCount]=useState<number|null>(null);
+  const[pageLoading,setPageLoading]=useState(false);
 
   useEffect(()=>{
     const controller=new AbortController();
@@ -105,6 +106,7 @@ export default function Home(){
 
     const controller=new AbortController();
     const timer=setTimeout(()=>{
+      setPageLoading(true);
       fetch("/api/jobs?"+params.toString(),{signal:controller.signal})
         .then(response=>{
           if(!response.ok)throw new Error("Failed to load jobs");
@@ -120,6 +122,11 @@ export default function Home(){
           setJobs([]);
           setHasMore(false);
           setTotalCount(0);
+        })
+        .finally(()=>{
+          if(!controller.signal.aborted){
+            setPageLoading(false);
+          }
         });
     },150);
 
@@ -131,14 +138,13 @@ export default function Home(){
 
   const loading=jobs===null;
   const freshCount=useMemo(()=>freshJobs.length,[freshJobs]);
-  const resetBoard=()=>setJobs(null);
+  const totalPages=totalCount?Math.max(1,Math.ceil(totalCount/20)):1;
   const clearSearch=()=>{
     setQ("");
     setCategory("all");
     setLocation("all");
     setDays(0);
     setCurrentPage(1);
-    resetBoard();
   };
 
   return(
@@ -174,6 +180,7 @@ export default function Home(){
           <div className="sectionTitle">
             <div><p className="eyebrow">JUST ARRIVED</p><h2>Fresh departures</h2></div>
             <button
+              type="button"
               className="textButton"
               onClick={()=>{
                 setDays(1);
@@ -223,13 +230,13 @@ export default function Home(){
               placeholder="Search role, company, skill, or location…"
               value={q}
               onChange={event=>{
-                resetBoard();
                 setQ(event.target.value);
                 setCurrentPage(1);
               }}
             />
             {q&&(
               <button
+                type="button"
                 className="clearSearch"
                 aria-label="Clear search"
                 onClick={()=>{
@@ -250,7 +257,6 @@ export default function Home(){
                 type="button"
                 className={"chip"+(category===item.key?" chipActive":"")}
                 onClick={()=>{
-                  resetBoard();
                   setCategory(item.key);
                   setCurrentPage(1);
                 }}
@@ -268,7 +274,6 @@ export default function Home(){
                   type="button"
                   className={"miniChip"+(location===item?" miniChipActive":"")}
                   onClick={()=>{
-                    resetBoard();
                     setLocation(item);
                     setCurrentPage(1);
                   }}
@@ -281,7 +286,6 @@ export default function Home(){
               className="dateFilter"
               value={days}
               onChange={event=>{
-                resetBoard();
                 setDays(Number(event.target.value));
                 setCurrentPage(1);
               }}
@@ -307,63 +311,65 @@ export default function Home(){
           <div className="empty">
             <h3>No roles match that route.</h3>
             <p>Try a broader skill, another location, or clear your filters.</p>
-            <button className="applyButton" onClick={clearSearch}>Clear all filters</button>
+            <button type="button" className="applyButton" onClick={clearSearch}>Clear all filters</button>
           </div>
         ):(
           <>
             <div className="listHead"><span>Role</span><span>Company</span><span>Source</span><span>Status</span></div>
-            {jobs.map(job=>(
-              <SpotlightCard
-                key={job.id}
-                className="jobSpotlightRow"
-                spotlightColor="rgba(244, 185, 66, 0.07)"
-                borderHoverColor="rgba(244, 185, 66, 0.4)"
-              >
-                <Link href={"/jobs/"+encodeURIComponent(job.id)} className="row">
-                  <span className="role">
-                    {job.title}
-                    <span className="roleLoc">{job.location||"Worldwide"}</span>
-                  </span>
-                  <span className="company">{job.company}</span>
-                  <span className="gate">
-                    {job.source}
-                    <small>{timeAgo(job.publishedAt)}</small>
-                  </span>
-                  <span className="rowStatus">
-                    <MatchBadge job={job}/>
-                    <span className={"status"+(jobIsFresh(job)?" statusFresh":"")}>
-                      {jobIsFresh(job)?<ShinyText text="Fresh" speed={3}/>:"Open"}
+            <div className={pageLoading ? "jobsListLoading" : undefined}>
+              {jobs.map(job=>(
+                <SpotlightCard
+                  key={job.id}
+                  className="jobSpotlightRow"
+                  spotlightColor="rgba(244, 185, 66, 0.07)"
+                  borderHoverColor="rgba(244, 185, 66, 0.4)"
+                >
+                  <Link href={"/jobs/"+encodeURIComponent(job.id)} className="row">
+                    <span className="role">
+                      {job.title}
+                      <span className="roleLoc">{job.location||"Worldwide"}</span>
                     </span>
-                  </span>
-                </Link>
-              </SpotlightCard>
-            ))}
+                    <span className="company">{job.company}</span>
+                    <span className="gate">
+                      {job.source}
+                      <small>{timeAgo(job.publishedAt)}</small>
+                    </span>
+                    <span className="rowStatus">
+                      <MatchBadge job={job}/>
+                      <span className={"status"+(jobIsFresh(job)?" statusFresh":"")}>
+                        {jobIsFresh(job)?<ShinyText text="Fresh" speed={3}/>:"Open"}
+                      </span>
+                    </span>
+                  </Link>
+                </SpotlightCard>
+              ))}
+            </div>
             <div className="pagination">
-              {currentPage>1&&(
-                <button
-                  className="chip"
-                  onClick={()=>{
-                    resetBoard();
-                    setCurrentPage(v=>v-1);
-                    document.getElementById("jobs")?.scrollIntoView({behavior:"smooth"});
-                  }}
-                >
-                  ← Previous
-                </button>
-              )}
-              <span className="pageLabel">Page {currentPage}</span>
-              {hasMore&&(
-                <button
-                  className="chip chipActive"
-                  onClick={()=>{
-                    resetBoard();
-                    setCurrentPage(v=>v+1);
-                    document.getElementById("jobs")?.scrollIntoView({behavior:"smooth"});
-                  }}
-                >
-                  Next →
-                </button>
-              )}
+              <button
+                type="button"
+                className="pageBtn"
+                disabled={currentPage <= 1 || pageLoading}
+                onClick={()=>{
+                  if(pageLoading)return;
+                  setCurrentPage(v=>Math.max(1,v-1));
+                  document.getElementById("jobs")?.scrollIntoView({behavior:"smooth"});
+                }}
+              >
+                ← Previous
+              </button>
+              <span className="pageLabel">Page {currentPage} of {totalPages}</span>
+              <button
+                type="button"
+                className="pageBtn"
+                disabled={!hasMore || currentPage >= totalPages || pageLoading}
+                onClick={()=>{
+                  if(pageLoading)return;
+                  setCurrentPage(v=>v+1);
+                  document.getElementById("jobs")?.scrollIntoView({behavior:"smooth"});
+                }}
+              >
+                Next →
+              </button>
             </div>
           </>
         )}

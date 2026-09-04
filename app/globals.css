@@ -253,8 +253,39 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
 .empty{padding:50px 4px;color:var(--ink-dim);font-size:15px;line-height:1.7;max-width:480px}
 .empty h3{color:var(--ink);margin:0 0 8px;font-size:20px}
 .empty p{margin:0 0 18px}
-.pagination{display:flex;align-items:center;justify-content:center;gap:12px;padding:28px 0}
-.pageLabel{font-size:12px;color:var(--ink-dim)}
+.pagination{display:flex;align-items:center;justify-content:center;gap:12px;padding:28px 0;flex-wrap:wrap}
+.pageLabel{font-size:13px;color:var(--ink-dim);padding:0 4px;white-space:nowrap;user-select:none}
+.pageBtn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:44px;
+  min-width:44px;
+  padding:10px 18px;
+  background:var(--panel);
+  border:1px solid var(--hairline);
+  border-radius:8px;
+  color:var(--ink);
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all .15s ease;
+  user-select:none;
+}
+.pageBtn:hover:not(:disabled){
+  border-color:var(--amber);
+  color:var(--amber);
+  background:rgba(244,185,66,.08);
+}
+.pageBtn:disabled{
+  opacity:0.4;
+  cursor:not-allowed;
+}
+.jobsListLoading{
+  opacity:0.6;
+  pointer-events:none;
+  transition:opacity .15s ease;
+}
 
 /* ── Fresh jobs / discovery ── */
 .freshSection{padding:28px 0;border-bottom:1px solid var(--hairline)}
@@ -1142,6 +1173,9 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
   .chip{padding:5px 10px;font-size:11px}
   .matchCard>div{grid-template-columns:44px 1fr}
   .matchScoreBig{font-size:20px}
+  .pagination{gap:8px;padding:20px 0}
+  .pageBtn{padding:10px 14px;font-size:12px}
+  .pageLabel{font-size:12px}
 }
 
 /* ════════════════════════════════════════
@@ -1877,39 +1911,96 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
   color:var(--teal);
   white-space:nowrap;
 }
-.activityStream{
-  display:flex;
-  flex-direction:column;
-  gap:8px;
+.activityStream {
+  max-height: 480px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
-.activityRow{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  font-size:12px;
-  padding:6px 0;
-  border-bottom:1px solid var(--hairline);
+.activityStream::-webkit-scrollbar {
+  width: 5px;
 }
-.activityRow:last-child{border-bottom:none}
-.activityDot{
-  width:6px;
-  height:6px;
-  border-radius:50%;
-  background:var(--amber);
-  flex-shrink:0;
+.activityStream::-webkit-scrollbar-track {
+  background: transparent;
 }
-.activityPath{
-  font-family:monospace;
-  color:var(--ink);
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-  flex:1;
+.activityStream::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
 }
-.activityMeta{
-  color:var(--ink-dim);
-  font-size:11px;
-  white-space:nowrap;
+.activityStream::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+.activityRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+.activityRow:hover {
+  background: rgba(255, 255, 255, 0.035);
+  border-color: rgba(63, 168, 143, 0.3);
+}
+.activityTarget {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.activityDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--teal);
+  box-shadow: 0 0 6px var(--teal);
+  flex-shrink: 0;
+  animation: liveDotPulse 2s ease-in-out infinite;
+}
+.activityPath {
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--amber);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 260px;
+}
+.activityMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--ink-dim);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+@media(max-width: 680px) {
+  .activityRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 10px 12px;
+  }
+  .activityTarget {
+    width: 100%;
+  }
+  .activityPath {
+    max-width: 100%;
+    flex: 1;
+  }
+  .activityMeta {
+    width: 100%;
+    justify-content: flex-start;
+  }
 }
 
 @media(max-width:720px){
@@ -3244,20 +3335,46 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
   font-family: inherit;
 }
 .ipTableContainer {
+  max-height: 520px;
+  overflow-y: auto;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   border: 1px solid var(--hairline);
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.18);
+  background: rgba(0, 0, 0, 0.2);
+  position: relative;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+.ipTableContainer::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.ipTableContainer::-webkit-scrollbar-track {
+  background: transparent;
+}
+.ipTableContainer::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+}
+.ipTableContainer::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 .ipTable {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   text-align: left;
   font-size: 12.5px;
   min-width: 650px;
 }
-.ipTable th {
+.ipTable th,
+.ipTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(14, 18, 26, 0.98);
+  backdrop-filter: blur(8px);
   padding: 11px 14px;
   color: var(--ink-dim);
   font-size: 11px;
@@ -3265,8 +3382,16 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
   text-transform: uppercase;
   letter-spacing: 0.06em;
   border-bottom: 1px solid var(--hairline);
-  background: rgba(0, 0, 0, 0.25);
+  box-shadow: 0 1px 0 var(--hairline);
   white-space: nowrap;
+}
+.ipTable th:first-child,
+.ipTable thead th:first-child {
+  border-top-left-radius: 7px;
+}
+.ipTable th:last-child,
+.ipTable thead th:last-child {
+  border-top-right-radius: 7px;
 }
 .ipTable td {
   padding: 12px 14px;
@@ -3413,6 +3538,14 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
 
 /* ── IP Table → Card layout on phones ── */
 @media(max-width:600px) {
+  /* Scrollable card list container */
+  .ipTableContainer {
+    max-height: 480px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 8px;
+    box-sizing: border-box;
+  }
   /* Hide the conventional table header */
   .ipTableContainer .ipTable thead {
     display: none;
@@ -3424,13 +3557,23 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
     display: block;
     width: 100%;
   }
-  /* Each row becomes a card */
+  /* Each row becomes a sleek card */
   .ipTableContainer .ipTable tr {
     border: 1px solid var(--hairline);
     border-radius: 8px;
-    margin: 8px 0;
-    padding: 12px;
-    background: rgba(255,255,255,0.02);
+    margin: 0 0 10px 0;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.025);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+    box-sizing: border-box;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .ipTableContainer .ipTable tr:last-child {
+    margin-bottom: 0;
+  }
+  .ipTableContainer .ipTable tr:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(63, 168, 143, 0.25);
   }
   .ipTableContainer .ipTable tr:hover td {
     background: transparent;
@@ -3440,13 +3583,19 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 5px 0;
-    border-bottom: 1px solid rgba(38,47,56,0.4);
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(38, 47, 56, 0.45);
     font-size: 12px;
     min-height: 0;
+    box-sizing: border-box;
+  }
+  .ipTableContainer .ipTable td:first-child {
+    padding-top: 0;
   }
   .ipTableContainer .ipTable td:last-child {
     border-bottom: none;
+    padding-bottom: 0;
   }
   /* Show data-label as the left column */
   .ipTableContainer .ipTable td::before {
@@ -3457,13 +3606,62 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body)
     letter-spacing: 0.05em;
     color: var(--ink-dim);
     flex-shrink: 0;
-    margin-right: 8px;
+  }
+  /* Right-aligned content in card cells */
+  .ipTableContainer .ipTable td .ipCell {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-width: calc(100% - 85px);
+    text-align: right;
+  }
+  .ipTableContainer .ipTable td .ipCell span {
+    word-break: break-all;
+  }
+  .ipTableContainer .ipTable td .ipCopyBtn {
+    flex-shrink: 0;
+    padding: 2px 6px;
+    font-size: 10px;
+  }
+  .ipTableContainer .ipTable td .ipLocationWrapper,
+  .ipTableContainer .ipTable td[data-label="Location"] > div {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    flex-wrap: wrap;
+    text-align: right;
+    max-width: calc(100% - 85px);
+  }
+  .ipTableContainer .ipTable td .ipLocationMapLink {
+    flex-shrink: 0;
+    font-size: 9.5px;
+    padding: 2px 6px;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ipTableContainer .ipTable td .ipRouteBadge {
+    max-width: 160px;
+    font-size: 10.5px;
+    padding: 2px 7px;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   /* Override min-width so no horizontal scroll */
   .ipTable {
     min-width: 0 !important;
   }
   /* Empty state spans full card */
+  .ipTableContainer .ipTable tr:has(.ipEmptyState) {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+  }
   .ipTableContainer .ipTable td.ipEmptyState {
     display: block;
     text-align: center;

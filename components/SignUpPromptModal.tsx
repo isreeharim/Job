@@ -43,11 +43,25 @@ export function SignUpPromptModal() {
     } catch {}
 
     // Delay prompt appearance so first-time visitors can orient themselves first
+    let retryTimer: NodeJS.Timeout | null = null;
     const timer = setTimeout(() => {
+      try {
+        if (sessionStorage.getItem("rf_loc_modal_open") === "1") {
+          retryTimer = setTimeout(() => {
+            if (sessionStorage.getItem("rf_loc_modal_open") !== "1") {
+              setIsOpen(true);
+            }
+          }, 6000);
+          return;
+        }
+      } catch {}
       setIsOpen(true);
     }, 2800);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      if (retryTimer) clearTimeout(retryTimer);
+    };
   }, [loading, email, pathname]);
 
   // Handle Escape key to dismiss

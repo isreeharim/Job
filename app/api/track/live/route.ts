@@ -6,9 +6,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  if (!verifyAdminRequest(req)) {
-    return NextResponse.json({ error: "Unauthorized admin access" }, { status: 401 });
-  }
+  const isAdmin = verifyAdminRequest(req);
 
   const client = supabaseAdmin || supabase;
   if (!client) {
@@ -41,6 +39,18 @@ export async function GET(req: NextRequest) {
 
     const deduplicatedSessions = Array.from(uniqueVisitorsMap.values());
     const liveVisitors = Math.max(1, deduplicatedSessions.length);
+
+    // If caller is NOT admin, return only public live count (no IP addresses or telemetry)
+    if (!isAdmin) {
+      return NextResponse.json(
+        { liveVisitors },
+        {
+          headers: {
+            "Cache-Control": "no-store, max-age=0",
+          },
+        }
+      );
+    }
 
     // Format live IP addresses list for admin tab
     const now = Date.now();

@@ -29,18 +29,23 @@ function formatHeaderDate(dateStr:string):string{
 export default function Calendar(){
   const[items,setItems]=useState<App[]>([]);
   const[cloud,setCloud]=useState(false);
+  const[loading,setLoading]=useState(true);
 
   useEffect(()=>{
     (async()=>{
-      const u=await currentUser();
-      setCloud(!!u);
-      if(u){
-        const cloudItems=await loadCloudApps();
-        setItems(cloudItems as App[]||[]);
-      }else{
-        try{
-          setItems(JSON.parse(localStorage.getItem(KEY)||localStorage.getItem(LEGACY)||"[]"));
-        }catch{}
+      try{
+        const u=await currentUser();
+        setCloud(!!u);
+        if(u){
+          const cloudItems=await loadCloudApps();
+          setItems(cloudItems as App[]||[]);
+        }else{
+          try{
+            setItems(JSON.parse(localStorage.getItem(KEY)||localStorage.getItem(LEGACY)||"[]"));
+          }catch{}
+        }
+      }finally{
+        setLoading(false);
       }
     })();
   },[]);
@@ -78,7 +83,12 @@ export default function Calendar(){
             : "Every follow-up, interview, and deadline saved on this device."}
         </p>
 
-        {groups.length>0?(
+        {loading?(
+          <div className="empty">
+            <h3>Loading calendar…</h3>
+            <p>Gathering your upcoming deadlines and interview actions…</p>
+          </div>
+        ):groups.length>0?(
           <div className="timeline">
             {groups.map(([date,apps])=>(
               <section className={"timelineDay "+(date<today?"past":"")} key={date}>

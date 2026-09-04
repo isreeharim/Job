@@ -26,8 +26,8 @@ export function SignUpPromptModal() {
   }, [handleDismiss, router]);
 
   useEffect(() => {
-    // Never show if auth is still loading, user is logged in, or on account page
-    if (loading || email || pathname === "/account") {
+    // Never show if auth is still loading, user is logged in, or on account / admin pages
+    if (loading || email || pathname === "/account" || pathname.startsWith("/admin")) {
       return;
     }
 
@@ -62,7 +62,7 @@ export function SignUpPromptModal() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, handleDismiss]);
 
-  if (!isOpen || loading || email || pathname === "/account") return null;
+  if (!isOpen || loading || email || pathname === "/account" || pathname.startsWith("/admin")) return null;
 
   return (
     <div

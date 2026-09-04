@@ -12,6 +12,7 @@ export default function SavedPage() {
   const [jobs, setJobs] = useState<CloudJob[]>([]);
   const [cloud, setCloud] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -32,6 +33,8 @@ export default function SavedPage() {
   async function handleRemove(e: React.MouseEvent, job: CloudJob) {
     e.preventDefault();
     e.stopPropagation();
+    if (removingId) return;
+    setRemovingId(job.id);
     setJobs(prev => prev.filter(j => j.id !== job.id));
 
     if (cloud) {
@@ -41,6 +44,7 @@ export default function SavedPage() {
       const stored: CloudJob[] = JSON.parse(localStorage.getItem(KEY) || "[]");
       localStorage.setItem(KEY, JSON.stringify(stored.filter(j => j.id !== job.id)));
     } catch {}
+    setRemovingId(null);
   }
 
   return (
@@ -89,8 +93,10 @@ export default function SavedPage() {
                       onClick={e => handleRemove(e, job)}
                       title="Remove from saved"
                       aria-label="Remove job from shortlist"
+                      disabled={removingId === job.id}
+                      aria-busy={removingId === job.id}
                     >
-                      ✕ Remove
+                      {removingId === job.id ? "Removing…" : "✕ Remove"}
                     </button>
                   </div>
                   <div className="savedCardMeta">

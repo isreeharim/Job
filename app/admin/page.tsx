@@ -648,7 +648,7 @@ export default function AdminPage() {
 
                         return (
                           <tr key={v.ipAddress + (v.sessionId || "")}>
-                            <td>
+                            <td data-label="Status">
                               {isLiveNow ? (
                                 <span className="ipStatusActive">
                                   <span className="liveDot" style={{ width: 6, height: 6 }} />
@@ -660,7 +660,7 @@ export default function AdminPage() {
                                 </span>
                               )}
                             </td>
-                            <td>
+                            <td data-label="IP Address">
                               <div className="ipCell">
                                 <span>{v.ipAddress}</span>
                                 <button
@@ -673,7 +673,7 @@ export default function AdminPage() {
                                 </button>
                               </div>
                             </td>
-                            <td>
+                            <td data-label="Location">
                               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                 <span style={{ fontSize: 15 }}>{geo.flag}</span>
                                 <span style={{ fontWeight: 600 }}>{geo.name}</span>
@@ -685,13 +685,13 @@ export default function AdminPage() {
                               </div>
                             </td>
                             {ipViewMode === "all" ? (
-                              <td>
+                              <td data-label="Total Hits">
                                 <span style={{ background: "rgba(244, 185, 66, 0.1)", color: "var(--amber)", padding: "2px 7px", borderRadius: 4, fontWeight: 700, fontSize: 11 }}>
                                   {v.totalViews || 1} hits
                                 </span>
                               </td>
                             ) : null}
-                            <td>
+                            <td data-label={ipViewMode === "all" ? "Last Route" : "Current Route"}>
                               <Link
                                 href={targetPath || "/"}
                                 target="_blank"
@@ -701,12 +701,12 @@ export default function AdminPage() {
                                 {targetPath || "/"}
                               </Link>
                             </td>
-                            <td>
+                            <td data-label="Device">
                               <span className="ipDeviceBadge">
                                 {v.device === "mobile" ? "📱 Mobile" : v.device === "tablet" ? "📟 Tablet" : "💻 Desktop"}
                               </span>
                             </td>
-                            <td style={{ color: "var(--ink-dim)", fontSize: 11.5, whiteSpace: "nowrap" }}>
+                            <td data-label={ipViewMode === "all" ? "Last Seen" : "Active"} style={{ color: "var(--ink-dim)", fontSize: 11.5, whiteSpace: "nowrap" }}>
                               {isSaved ? timeAgo(v.lastSeen) : timeAgo(v.lastPingAt)}
                             </td>
                           </tr>

@@ -14,6 +14,19 @@ const NAV_LINKS=[
   {href:"/alerts",label:"Alerts"},
 ];
 
+function isNavLinkActive(href:string,pathname:string):boolean{
+  if(href==="/"){
+    // Root matches "/" exactly, and also nested job detail routes like /jobs/[id]
+    return pathname==="/"||pathname.startsWith("/jobs/");
+  }
+  if(href==="/applications"){
+    // Tracker also covers calendar and intelligence sub-pages
+    return pathname.startsWith("/applications")||pathname==="/calendar"||pathname==="/intelligence";
+  }
+  // All other links: match if pathname equals or starts with href + "/"
+  return pathname===href||pathname.startsWith(href+"/");
+}
+
 export function AppHeader(){
   const pathname=usePathname();
 
@@ -28,15 +41,15 @@ export function AppHeader(){
         </div>
       </div>
 
-      <nav className="headerNav">
+      <nav className="headerNav" aria-label="Main navigation">
         {NAV_LINKS.map(link=>{
-          const isActive=pathname===link.href||
-            (link.href==="/applications"&&(pathname==="/calendar"||pathname==="/intelligence"));
+          const isActive=isNavLinkActive(link.href,pathname);
           return(
             <Link
               key={link.href}
               href={link.href}
               className={"alertLink"+(isActive?" alertLinkActive":"")}
+              aria-current={isActive?"page":undefined}
             >
               {link.label}
             </Link>

@@ -33,10 +33,11 @@ export function LiveVisitorBadge() {
       href="/analytics"
       className="liveVisitorBadge"
       title="Real-time visitors currently active on RemoteFlow. Click for live analytics."
+      aria-label={liveCount === null ? "Live visitor count loading" : `${liveCount} live visitors on RemoteFlow`}
     >
       <span className="liveDot" />
       <span className="liveLabel">
-        {liveCount === null ? "1 live" : `${liveCount} live`}
+        {liveCount === null ? "…" : `${liveCount} live`}
       </span>
     </Link>
   );

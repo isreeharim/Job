@@ -72,9 +72,15 @@ export function DottedGlobe({ countries, activeCount = 0 }: DottedGlobeProps) {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
     const onResize = () => {
       if (canvas) {
         width = canvas.offsetWidth;
+        // Update the globe canvas dimensions on resize so it doesn't stay blurry/cropped
+        if (globeRef.current) {
+          globeRef.current.update({ width: width * dpr, height: width * dpr });
+        }
       }
     };
     window.addEventListener("resize", onResize);
@@ -84,9 +90,10 @@ export function DottedGlobe({ countries, activeCount = 0 }: DottedGlobeProps) {
 
     try {
       const globe = createGlobe(canvas, {
-        devicePixelRatio: Math.min(window.devicePixelRatio || 2, 2),
-        width: (width || 380) * 2,
-        height: (width || 380) * 2,
+        devicePixelRatio: dpr,
+        // Pass CSS pixel size; COBE multiplies by devicePixelRatio internally for the backing canvas
+        width: (width || 380),
+        height: (width || 380),
         phi: 0,
         theta: 0.25,
         dark: 1,

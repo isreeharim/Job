@@ -33,6 +33,7 @@ const read=():App[]=>{
 export default function ApplicationsPage(){
   const[items,setItems]=useState<App[]>([]);
   const[cloud,setCloud]=useState(false);
+  const[loading,setLoading]=useState(true);
   const[show,setShow]=useState(false);
   const[filter,setFilter]=useState<"all"|"upcoming"|"overdue">("all");
   const[mobileStatusTab,setMobileStatusTab]=useState<Status|"all">("all");
@@ -41,13 +42,20 @@ export default function ApplicationsPage(){
 
   useEffect(()=>{
     void(async()=>{
-      const u=await currentUser();
-      setCloud(!!u);
-      if(u){
-        const cloudItems=await loadCloudApps();
-        setItems(cloudItems as App[]||[]);
-      }else{
+      try{
+        const u=await currentUser();
+        setCloud(!!u);
+        if(u){
+          const cloudItems=await loadCloudApps();
+          setItems(cloudItems as App[]||[]);
+        }else{
+          setItems(read());
+        }
+      }catch(err){
+        console.error("Failed to load applications:",err);
         setItems(read());
+      }finally{
+        setLoading(false);
       }
     })();
   },[]);
@@ -93,13 +101,18 @@ export default function ApplicationsPage(){
 
   async function remove(id:string){
     setDeletingId(id);
-    const updated=items.filter(x=>x.id!==id);
-    persist(updated);
-    if(cloud){
-      await deleteCloudApp(id);
+    try{
+      const updated=items.filter(x=>x.id!==id);
+      persist(updated);
+      if(cloud){
+        await deleteCloudApp(id);
+      }
+    }catch(err){
+      console.error("Delete failed:",err);
+    }finally{
+      setDeletingId(null);
+      setConfirmDeleteId(null);
     }
-    setDeletingId(null);
-    setConfirmDeleteId(null);
   }
 
   const today=new Date().toISOString().slice(0,10);
@@ -203,113 +216,135 @@ export default function ApplicationsPage(){
           <Link href="/calendar" className="textButton">Open calendar →</Link>
         </div>
 
-        <div className="trackerMobileTabs">
-          <button
-            type="button"
-            className={"trackerMobileTab "+(mobileStatusTab==="all"?"trackerMobileTabActive":"")}
-            onClick={()=>setMobileStatusTab("all")}
-          >
-            All
-          </button>
-          {STATUSES.map(s=>{
-            const count=items.filter(i=>i.status===s).length;
-            return(
-              <button
-                key={s}
-                type="button"
-                className={"trackerMobileTab "+(mobileStatusTab===s?"trackerMobileTabActive":"")}
-                onClick={()=>setMobileStatusTab(s)}
-              >
-                {s} ({count})
+        {loading ? (
+          <div className="empty" style={{ margin: "32px 0" }}>
+            <h3>Loading your pipeline…</h3>
+            <p>Retrieving your tracked applications…</p>
+          </div>
+        ) : items.length === 0 ? (
+          <div className="empty" style={{ margin: "32px 0" }}>
+            <h3>No applications tracked yet.</h3>
+            <p>Keep every interview, follow-up date, and offer organized in one place. Add your first application above or bookmark jobs from the board.</p>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
+              <button className="applyButton" type="button" onClick={() => setShow(true)}>
+                + Add your first application
               </button>
-            );
-          })}
-        </div>
-
-        <div className="tracker">
-          {STATUSES.map(status=>{
-            const columnItems=shown.filter(i=>i.status===status);
-            const totalInStatus=items.filter(i=>i.status===status).length;
-            const isHiddenMobile=mobileStatusTab!=="all"&&mobileStatusTab!==status;
-            return(
-              <div className={"trackerColumn "+(isHiddenMobile?"trackerColumnHiddenMobile":"")} key={status}>
-                <h3>{status}<span>{totalInStatus}</span></h3>
-                {columnItems.map(item=>(
-                  <SpotlightCard
-                    key={item.id}
-                    spotlightColor="rgba(244, 185, 66, 0.08)"
-                    borderHoverColor="var(--amber)"
-                    className="trackerCardSpotlight"
+              <Link href="/" className="saveButton">
+                Explore job board
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="trackerMobileTabs">
+              <button
+                type="button"
+                className={"trackerMobileTab "+(mobileStatusTab==="all"?"trackerMobileTabActive":"")}
+                onClick={()=>setMobileStatusTab("all")}
+              >
+                All
+              </button>
+              {STATUSES.map(s=>{
+                const count=items.filter(i=>i.status===s).length;
+                return(
+                  <button
+                    key={s}
+                    type="button"
+                    className={"trackerMobileTab "+(mobileStatusTab===s?"trackerMobileTabActive":"")}
+                    onClick={()=>setMobileStatusTab(s)}
                   >
-                    <article className="trackerCard trackerCardFull" style={{border:"none",background:"transparent"}}>
-                      <strong>{item.job.title}</strong>
-                      <span>{item.job.company}</span>
-                      {item.nextActionDate&&(
-                        <small className={item.nextActionDate<today?"deadline overdue":"deadline"}>
-                          {item.nextAction||"Next step"} · {item.nextActionDate}
-                          {item.nextActionDate<today?" (overdue)":""}
-                        </small>
-                      )}
-                      <select
-                        value={item.status}
-                        onChange={e=>patch(item.id,{status:e.target.value as Status})}
-                        title="Update status"
+                    {s} ({count})
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="tracker">
+              {STATUSES.map(status=>{
+                const columnItems=shown.filter(i=>i.status===status);
+                const totalInStatus=items.filter(i=>i.status===status).length;
+                const isHiddenMobile=mobileStatusTab!=="all"&&mobileStatusTab!==status;
+                return(
+                  <div className={"trackerColumn "+(isHiddenMobile?"trackerColumnHiddenMobile":"")} key={status}>
+                    <h3>{status}<span>{totalInStatus}</span></h3>
+                    {columnItems.map(item=>(
+                      <SpotlightCard
+                        key={item.id}
+                        spotlightColor="rgba(244, 185, 66, 0.08)"
+                        borderHoverColor="var(--amber)"
+                        className="trackerCardSpotlight"
                       >
-                        {STATUSES.map(s=><option key={s}>{s}</option>)}
-                      </select>
-                      <input
-                        className="nextDateInput"
-                        type="date"
-                        value={item.nextActionDate||""}
-                        onChange={e=>patch(item.id,{nextActionDate:e.target.value})}
-                        title="Next action deadline"
-                      />
-                      <input
-                        className="nextActionInput"
-                        value={item.nextAction||""}
-                        placeholder="Next action"
-                        onChange={e=>patch(item.id,{nextAction:e.target.value})}
-                      />
-                      <div className="cardActions">
-                        {item.job.url&&(
-                          <a href={item.job.url} target="_blank" rel="noreferrer" className="cardOpenLink">Open ↗</a>
-                        )}
-                        {confirmDeleteId===item.id?(
-                          <div style={{display:"inline-flex",alignItems:"center",gap:6}}>
-                            <button
-                              type="button"
-                              className="appDeleteConfirmBtn"
-                              disabled={deletingId===item.id}
-                              onClick={()=>void remove(item.id)}
-                            >
-                              {deletingId===item.id?"Deleting…":"Confirm Delete"}
-                            </button>
-                            <button
-                              type="button"
-                              className="appDeleteCancelBtn"
-                              onClick={()=>setConfirmDeleteId(null)}
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        ):(
-                          <button
-                            type="button"
-                            className="appDeleteButton"
-                            onClick={()=>setConfirmDeleteId(item.id)}
-                            title="Delete this application"
+                        <article className="trackerCard trackerCardFull" style={{border:"none",background:"transparent"}}>
+                          <strong>{item.job.title}</strong>
+                          <span>{item.job.company}</span>
+                          {item.nextActionDate&&(
+                            <small className={item.nextActionDate<today?"deadline overdue":"deadline"}>
+                              {item.nextAction||"Next step"} · {item.nextActionDate}
+                              {item.nextActionDate<today?" (overdue)":""}
+                            </small>
+                          )}
+                          <select
+                            value={item.status}
+                            onChange={e=>patch(item.id,{status:e.target.value as Status})}
+                            title="Update status"
                           >
-                            Delete
-                          </button>
-                        )}
-                      </div>
-                    </article>
-                  </SpotlightCard>
-                ))}
-              </div>
-            );
-          })}
-        </div>
+                            {STATUSES.map(s=><option key={s}>{s}</option>)}
+                          </select>
+                          <input
+                            className="nextDateInput"
+                            type="date"
+                            value={item.nextActionDate||""}
+                            onChange={e=>patch(item.id,{nextActionDate:e.target.value})}
+                            title="Next action deadline"
+                          />
+                          <input
+                            className="nextActionInput"
+                            value={item.nextAction||""}
+                            placeholder="Next action"
+                            onChange={e=>patch(item.id,{nextAction:e.target.value})}
+                          />
+                          <div className="cardActions">
+                            {item.job.url&&(
+                              <a href={item.job.url} target="_blank" rel="noreferrer" className="cardOpenLink">Open ↗</a>
+                            )}
+                            {confirmDeleteId===item.id?(
+                              <div style={{display:"inline-flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+                                <button
+                                  type="button"
+                                  className="appDeleteConfirmBtn"
+                                  disabled={deletingId===item.id}
+                                  onClick={()=>void remove(item.id)}
+                                >
+                                  {deletingId===item.id?"Deleting…":"Confirm Delete"}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="appDeleteCancelBtn"
+                                  onClick={()=>setConfirmDeleteId(null)}
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ):(
+                              <button
+                                type="button"
+                                className="appDeleteButton"
+                                onClick={()=>setConfirmDeleteId(item.id)}
+                                title="Delete this application"
+                              >
+                                Delete
+                              </button>
+                            )}
+                          </div>
+                        </article>
+                      </SpotlightCard>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
       </section>
     </main>
   );

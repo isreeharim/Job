@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import {useRouter} from "next/navigation";
 import {FormEvent,useState} from "react";
 import {useAuth} from "@/components/AuthProvider";
 import {AppHeader} from "@/components/AppHeader";
 import {SpotlightCard,StarBorder} from "@/components/reactbits";
 
 export default function AccountPage(){
+  const router=useRouter();
   const{email,loading,signInWithPassword,signUpWithPassword,signOut}=useAuth();
 
   const[isSignUp,setIsSignUp]=useState(()=>{
@@ -19,6 +21,7 @@ export default function AccountPage(){
   const[showPassword,setShowPassword]=useState(false);
   const[msg,setMsg]=useState<{text:string;isError:boolean}|null>(null);
   const[submitting,setSubmitting]=useState(false);
+  const[signingOut,setSigningOut]=useState(false);
 
   function toggleMode(toSignUp:boolean){
     setIsSignUp(toSignUp);
@@ -77,6 +80,18 @@ export default function AccountPage(){
     setSubmitting(false);
   }
 
+  async function handleSignOut(){
+    setSigningOut(true);
+    try{
+      await signOut();
+      router.push("/");
+    }catch(err){
+      console.error("Sign out error:",err);
+    }finally{
+      setSigningOut(false);
+    }
+  }
+
   return(
     <main className="detailPage">
       <AppHeader/>
@@ -125,9 +140,10 @@ export default function AccountPage(){
               type="button"
               className="applyButton"
               style={{width:"100%",marginTop:12,background:"transparent",color:"var(--ink)",border:"1px solid var(--hairline)"}}
-              onClick={signOut}
+              onClick={handleSignOut}
+              disabled={signingOut}
             >
-              Sign out
+              {signingOut?"Signing out…":"Sign out"}
             </button>
           </SpotlightCard>
         ):(

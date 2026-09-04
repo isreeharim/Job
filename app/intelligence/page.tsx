@@ -21,18 +21,23 @@ const pct=(a:number,b:number)=>b?Math.round(a/b*100):0;
 export default function Intelligence(){
   const[items,setItems]=useState<App[]>([]);
   const[cloud,setCloud]=useState(false);
+  const[loading,setLoading]=useState(true);
 
   useEffect(()=>{
     (async()=>{
-      const u=await currentUser();
-      setCloud(!!u);
-      if(u){
-        const cloudItems=await loadCloudApps();
-        setItems(cloudItems as App[]||[]);
-      }else{
-        try{
-          setItems(JSON.parse(localStorage.getItem(KEY)||localStorage.getItem(LEGACY)||"[]"));
-        }catch{}
+      try{
+        const u=await currentUser();
+        setCloud(!!u);
+        if(u){
+          const cloudItems=await loadCloudApps();
+          setItems(cloudItems as App[]||[]);
+        }else{
+          try{
+            setItems(JSON.parse(localStorage.getItem(KEY)||localStorage.getItem(LEGACY)||"[]"));
+          }catch{}
+        }
+      }finally{
+        setLoading(false);
       }
     })();
   },[]);
@@ -105,70 +110,79 @@ export default function Intelligence(){
             : "Insights computed from applications stored on this device."}
         </p>
 
-        <div className="intelStats">
-          <div><b>{d.applied}</b><span>Applications</span></div>
-          <div><b>{d.interviewRate}%</b><span>Interview rate</span></div>
-          <div><b>{d.offerRate}%</b><span>Offer rate</span></div>
-          <div><b>{d.responseRate}%</b><span>Response signal</span></div>
-        </div>
-
-        <section className="intelCallout">
-          <p className="eyebrow">PERSONAL INSIGHT</p>
-          <h2>{insight}</h2>
-          <span>{d.active} active · {d.interviews} interview stage · {d.rejected} rejected</span>
-        </section>
-
-        <div className="intelGrid">
-          <section className="analyticsCard">
-            <h2>Pipeline health</h2>
-            {[
-              ["Applied",d.applied],
-              ["Interview",d.interviews],
-              ["Offer",d.offers],
-              ["Rejected",d.rejected],
-            ].map(([n,v])=>(
-              <div className="intelRow" key={String(n)}>
-                <span>{n}</span>
-                <div>
-                  <i style={{width:(Number(v)/Math.max(d.applied,1)*100)+"%"}}/>
-                </div>
-                <b>{v}</b>
-              </div>
-            ))}
-          </section>
-
-          <section className="analyticsCard">
-            <h2>Most targeted companies</h2>
-            {d.top.length>0?d.top.map(([n,v])=>(
-              <div className="intelCompany" key={n}>
-                <span>{n}</span>
-                <b>{v} application{v===1?"":"s"}</b>
-              </div>
-            )):(
-              <p className="muted">No company data recorded yet.</p>
-            )}
-          </section>
-        </div>
-
-        <section className="analyticsCard intelTrend">
-          <h2>Application activity</h2>
-          {d.recent.length>0?(
-            <div className="miniTrend">
-              {d.recent.map(([n,v])=>{
-                const max=Math.max(...d.recent.map(x=>x[1]),1);
-                return(
-                  <div key={n}>
-                    <i style={{height:(v/max*100)+"%"}}/>
-                    <b>{v}</b>
-                    <span>{n}</span>
-                  </div>
-                );
-              })}
+        {loading ? (
+          <div className="empty">
+            <h3>Analyzing your pipeline…</h3>
+            <p>Computing conversion signals and interview statistics…</p>
+          </div>
+        ) : (
+          <>
+            <div className="intelStats">
+              <div><b>{d.applied}</b><span>Applications</span></div>
+              <div><b>{d.interviewRate}%</b><span>Interview rate</span></div>
+              <div><b>{d.offerRate}%</b><span>Offer rate</span></div>
+              <div><b>{d.responseRate}%</b><span>Response signal</span></div>
             </div>
-          ):(
-            <p className="muted">Track applications over time to reveal weekly activity trends.</p>
-          )}
-        </section>
+
+            <section className="intelCallout">
+              <p className="eyebrow">PERSONAL INSIGHT</p>
+              <h2>{insight}</h2>
+              <span>{d.active} active · {d.interviews} interview stage · {d.rejected} rejected</span>
+            </section>
+
+            <div className="intelGrid">
+              <section className="analyticsCard">
+                <h2>Pipeline health</h2>
+                {[
+                  ["Applied",d.applied],
+                  ["Interview",d.interviews],
+                  ["Offer",d.offers],
+                  ["Rejected",d.rejected],
+                ].map(([n,v])=>(
+                  <div className="intelRow" key={String(n)}>
+                    <span>{n}</span>
+                    <div>
+                      <i style={{width:(Number(v)/Math.max(d.applied,1)*100)+"%"}}/>
+                    </div>
+                    <b>{v}</b>
+                  </div>
+                ))}
+              </section>
+
+              <section className="analyticsCard">
+                <h2>Target employers</h2>
+                {d.top.length>0?d.top.map(([n,v])=>(
+                  <div className="intelCompany" key={n}>
+                    <span>{n}</span>
+                    <b>{v} application{v===1?"":"s"}</b>
+                  </div>
+                )):(
+                  <p className="muted">No company data recorded yet.</p>
+                )}
+              </section>
+            </div>
+
+            <section className="analyticsCard intelTrend">
+              <h2>Application activity</h2>
+              {d.recent.length>0?(
+                <div className="miniTrend">
+                  {d.recent.map(([n,v])=>{
+                    const max=Math.max(...d.recent.map(x=>x[1]),1);
+                    return(
+                      <div key={n}>
+                        <i style={{height:(v/max*100)+"%"}}/>
+                        <b>{v}</b>
+                        <span>{n}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ):(
+                <p className="muted">Track applications over time to reveal weekly activity trends.</p>
+              )}
+            </section>
+          </>
+        )}
       </section>
     </main>
   );
